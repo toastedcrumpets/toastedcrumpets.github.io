@@ -1,0 +1,32 @@
+@import url("fonts/Sans/cmun-sans.css");
+@import url("fonts/Typewriter/cmun-typewriter.css");
+
+* {
+    font-family: "Computer Modern Sans";
+}
+
+body {
+    margin:0;
+    background-color: #EEF3F2;
+}
+
+h1 {
+    background-color: #AEC6CF;
+    color: #FFFFFF;
+    font-size:2.5em;
+    font-weight:bold;
+    padding: 0 0 0 0.5em;
+    margin: 0;
+}
+
+a, a:visited {
+    color: #0000FF;
+}
+
+h2 {
+    margin: 1em 0 0 0.5em;
+}
+
+ul {
+    margin: 0.5em 0;
+}
