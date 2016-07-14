@@ -6,24 +6,57 @@
 	<meta name="description" content="Online presence of Marcus N. Bannerman.">
 	<meta name="author" content="Marcus Bannerman <m.bannerman@gmail.com">
 	<link rel="stylesheet" href="style.css"></link>
+	<link rel="stylesheet" href="resources/Font-Awesome/css/font-awesome.min.css"/>	
     </head>
     <body>
 	<h1>Marcus Bannerman</h1>
-	<h2>Publications</h2>
-	<ul>
-	    <li><a href="https://scholar.google.co.uk/citations?user=zQjYW50AAAAJ">Google Scholar</a></li>
-	</ul>
 	<h2>Code (<a href="http://github.com/toastedcrumpets">Github</a>)</h2>
-	<ul>
-	    <li>DynamO: <a href="http://dynamomd.org">website</a>, <a href="http://github.com/toastedcrumpets/dynamo">Github</a></li>
-	    <li>Stator: <a href="http://github.com/toastedcrumpets/stator">Github</a></li>
-	    <li>PyChemEng: <a href="PyChemEng/doc/documentation.html">website</a>, <a href="http://github.com/toastedcrumpets/pychemeng">Github</a></li>
-	</ul>
+	<p>
+	    <ul>
+		<li><b>DynamO</b>: <a href="http://dynamomd.org">website</a>, <a href="http://github.com/toastedcrumpets/dynamo">Github</a><br/>
+		    An event-driven molecular dynamics code and
+		    visualisation suite.
+		</li>
+		<li><b>Stator</b>: <a href="http://github.com/toastedcrumpets/stator">Github</a><br/>
+		    A library for collision calculations and compile-time
+		    computer algebra library.
+		</li>
+		<li>
+		    <b>SimCem.com</b>: <a href="http://SimCem.com">website</a>
+		    <br/>
+		    A database of thermodynamic data and corresponding
+		    computational thermodynamics code (Gibb's free energy
+		    minimisation).
+		</li>
+	    </ul>
+	</p>
+	<h2>Lecture Notes</h2>
+	<p>
+	    <ul>
+		<li><b>CCP5 Summer School (2016)</b>: <a href="http://www.marcusbannerman.co.uk/CCP5School/"> lecture notes on statistical mechanics and Monte Carlo.</a></li>
+		<li><b>Thermodynamics</b>: <a href="http://simcem.com/#thermo-page">Notes on the implementation of SimCem.com</a>.
+	    </ul>
+	</p>
 	<h2>Presentations</h2>
-	<ul>
-	    <li><a href="http://www.marcusbannerman.co.uk/CCP5School/">CCP5 Summer School: lecture notes on statistical mechanics and Monte Carlo</a></li>
-	    <li><a href="http://www.marcusbannerman.co.uk/Presentation_CCP5_SummerSchool_2015/">CCP5 Summer School Research Presentation (2015)</a></li>        
-	    <li><a href="http://www.marcusbannerman.co.uk/Presentation_Particle_Simulations_2015/">Particle Simulations (2015)</a></li>        
-	</ul>
+	<p>
+	    <ul>
+		<li><a href="http://www.marcusbannerman.co.uk/Presentation_CCP5_SummerSchool_2015/">CCP5 Summer School Research Presentation (2015)</a></li>
+		<li><a href="http://www.marcusbannerman.co.uk/Presentation_Particle_Simulations_2015/">Particle Simulations (2015)</a></li>        
+	    </ul>
+	</p>
+	<h2>Publications <a href="https://scholar.google.co.uk/citations?user=zQjYW50AAAAJ" style="font-size:0.8em;vertical-align:middle;">Google Scholar</a></h2>
+	<table id="bibtable">
+	</table>
     </body>
+    <!-- Jquery -->
+    <script src="js/jquery/dist/jquery.js"></script>
+
+    <!-- Bibtex support -->
+    <script type="text/javascript" src="js/bib-publication-list/lib/BibTex-0.1.2.js"></script>
+    <script type="text/javascript" src="js/bib-publication-list/src/bib-publication-list.js"></script>
+    <script type="text/javascript" src="js/bib-publication-list/lib/jquery.dataTables.min.js"></script>
+    
+    
+    <!-- The actual interface code -->
+    <script type="text/javascript" src="js/interface.js"></script>
 </html>
