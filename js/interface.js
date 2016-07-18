@@ -4,7 +4,7 @@ $(document).ready(function() {
 	url:"publications.bib",
 	success: function (data, status, jqXHR) {
 	    var options = {};
-	    //options.file_links = true;
+	    options.file_links = true;
 	    bibtex = bibtexify(data, options, 'bibtable');
 
 	    //var publist = $('<ul/>').appendTo($('#publications'));
