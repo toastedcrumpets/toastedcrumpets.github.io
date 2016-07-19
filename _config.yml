@@ -1,1 +1,1 @@
-exclude: [test]
+exclude: [resources/Font-Awesome/src/test]
