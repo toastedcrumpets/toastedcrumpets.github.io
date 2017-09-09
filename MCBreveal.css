@@ -25,7 +25,11 @@
     font-size:0.8em;
 }
 
-body.print-pdf .hide-on-pdf, body.print-pdf .audio-controls, body.print-pdf .slide-menu, body.print-pdf .slide-menu-button {
+body.print-pdf .hide-on-pdf,
+body.print-pdf .audio-controls,
+body.print-pdf .slide-menu,
+body.print-pdf .slide-menu-button,
+body.print-pdf .chalkboard-button {
     display:none;
 }
 
