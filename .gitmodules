@@ -7,3 +7,9 @@
 [submodule "resources/Font-Awesome"]
 	path = resources/Font-Awesome
 	url = https://github.com/FortAwesome/Font-Awesome.git
+[submodule "MathJax"]
+	path = MathJax
+	url = https://github.com/mathjax/MathJax.git
+[submodule "reveal.js"]
+	path = reveal.js
+	url = https://github.com/hakimel/reveal.js.git
