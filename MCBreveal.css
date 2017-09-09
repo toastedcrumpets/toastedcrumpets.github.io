@@ -1,0 +1,26 @@
+/*********************************************
+ * GLOBAL STYLES
+ *********************************************/
+.reveal h2 {
+    font-size: 2em;
+}
+
+.reveal h3 {
+    font-size: 1.2em;
+}
+
+.reveal h1, .reveal h2, .reveal h3, .reveal {
+    font-family: "Mathjax_Main";
+    text-transform: initial;
+}
+
+.reveal img {
+    width:auto;
+    height:auto;
+    background: none;
+}
+
+.reveal figcaption {
+    margin:0 5em;
+    font-size:0.8em;
+}
