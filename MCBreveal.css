@@ -32,3 +32,13 @@ body.print-pdf .slide-menu-button,
 body.print-pdf .chalkboard-button {
     display:none;
 }
+
+.reveal .center > * {
+    margin-left:auto;
+    margin-right:auto;
+    display:block;
+}
+
+.reveal ul {
+    display:initial;
+}
