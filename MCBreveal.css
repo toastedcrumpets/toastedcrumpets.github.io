@@ -42,3 +42,18 @@ body.print-pdf .chalkboard-button {
 .reveal ul {
     /*display:initial;*/
 }
+
+.reveal .footnote-container, .reveal .footnotemark {
+    font-size: 0.8em;
+}
+
+.reveal .mathblock {
+    background:linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.1));
+    border-radius:1em;
+}
+
+.reveal .mathblock h3 {
+    text-align:center;
+    background:linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.1));
+    border-radius:1em 1em 0 0;
+}
