@@ -50,10 +50,24 @@ body.print-pdf .chalkboard-button {
 .reveal .mathblock {
     background:linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.1));
     border-radius:1em;
+    padding:0 1em;
 }
 
 .reveal .mathblock h3 {
     text-align:center;
-    background:linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.1));
-    border-radius:1em 1em 0 0;
+    width:100%;
+}
+
+.reveal .slide-menu-item.menu-section {
+    font-size:0.9em;
+    border-bottom: 4px double;
+    border-top: 4px double;    
+    text-align: center;
+    padding: 0.25em;
+    cursor:default;
+}
+
+.reveal .active-menu-panel li.selected.menu-section {
+    background-color:inherit;
+    color:inherit;
 }
