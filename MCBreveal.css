@@ -23,6 +23,7 @@
 .reveal figcaption {
     margin:0 5em;
     font-size:0.8em;
+    text-align:center;
 }
 
 body.print-pdf .hide-on-pdf,
