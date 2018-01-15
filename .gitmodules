@@ -1,6 +1,6 @@
 [submodule "js/jquery"]
 	path = js/jquery
-	url = https://github.com/jquery/jquery.git
+	url = https://github.com/jquery/jquery-dist.git
 [submodule "js/bib-publication-list"]
 	path = js/bib-publication-list
 	url = https://github.com/toastedcrumpets/bib-publication-list.git
@@ -16,3 +16,6 @@
 [submodule "reveal.js-plugins"]
 	path = reveal.js-plugins
 	url = https://github.com/toastedcrumpets/reveal.js-plugins.git
+[submodule "js/slick"]
+	path = js/slick
+	url = https://github.com/kenwheeler/slick.git
