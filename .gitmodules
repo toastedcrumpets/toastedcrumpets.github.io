@@ -16,3 +16,6 @@
 [submodule "js/slick"]
 	path = js/slick
 	url = https://github.com/kenwheeler/slick.git
+[submodule "js/jquery-dist"]
+	path = js/jquery-dist
+	url = https://github.com/jquery/jquery-dist.git
