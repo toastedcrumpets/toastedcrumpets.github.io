@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" async
+	    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML">
+    </script>
+    <style>
+      body { margin:auto; max-width:1024px; }
+      .jce_caption { display:block; margin:auto; text-align:center; border:1px solid black; padding: 5px;}
+    </style>
+  </head>
+  <body>
+    <h1>GLSL Ray-Traced Volume Rendering Optimizations</h1>
+    <a href="img/Bonsai.jpg" title="An MRI scan of a bonsai tree, rendered using volume ray tracing and a special color mapping." target="_blank" class="jcebox"><img height="260" width="247" src="img/Bonsai.jpg" alt="Bonsai" style="float: right;" /></a>
+    <p>This article discusses some simple optimizations that can be made to accelerate GPU ray-traced volume renderings. These features are implemented in the upcoming version of DynamO/Coil to visualize hydrodynamic fields.</p>
+    <h2>Introduction</h2>
+    <p>Volume rendering is a technique used to visualize volumes of data. This technique is very popular in Computational Fluid Dynamics (CFD) to aid researchers to look inside the system and see how fields of data (such as the pressure or density) vary in three dimensions.</p>
+    <p>The technique is also very popular in medical applications where it is used to reconstruct MRI data, and technicians can peel away layers of skin and flesh (see right) and look inside a patient with a click of the mouse instead of a slice of the scapel.</p>
+    <p>This technique can be computationally expensive (its essentially ray-tracing), but thanks to programmable GPU's, realtime techniques are available for rendering this sort of data.</p>
+    <p>There are many resources on the web that describe various techniques:-</p>
+    <ul>
+      <li><a href="http://graphicsrunner.blogspot.com/2009/01/volume-rendering-101.html">Two pass volume rendering, transfer functions and optimization</a>: Kyle Hayward provides an excellent introduction into Ray-traced volume rendering on graphics cards. Similar descriptions are given <a href="http://www.daimi.au.dk/~trier/?page_id=98">here</a> or here.</li>
+      <li><a href="http://prideout.net/blog/?p=64">Single pass volume rendering</a>: The two passes of the volume render can be comined into a single pass (but this makes the free volume skipping optimisation difficult).</li>
+      <li><a href="http://web.cs.wpi.edu/~matt/courses/cs563/talks/powwie/p1/ray-cast.htm">Volume Rendering Class Notes</a>: These notes by John Pawasauskas are very thorough and a great reference for the details.</li>
+    </ul>
+    <p>These resources are better than anything I can write, so I'll assume you looked at them or already know about volume rendering. I'll discuss some general tricks to accelerate ray tracing in these systems.</p>
+    <h2>Ray Tracing and Step Size</h2>
+    <div class="jce_caption"><a target="_blank" class="jcebox" href="img/Comparison.jpg" title="Rendering with small step size (left) and with a 10x larger step size (right)"><img height="400" width="672" src="img/Comparison.jpg" alt="Comparison" /></a>
+      <div style="text-align: center;">Rendering with small step size (left) and with a 10x larger step size (right)</div>
+    </div>
+    <p>If you have a ray-traced volume renderer, the simplest method to accelerate volume rendering is to simpy increase the ray step size. By increasing the step size, each ray/pixel requires less calculations, less texture lookups (these are really expensive!), and the framerate increase can be dramatic.</p>
+    <p>But a problem occurs when the ray step size approaches the size of a single Voxel, the image on the right shows what can happen.&nbsp;</p>
+    <p>The image has significant "banding" (see the circular patterns in the shoulders), and there are some bright white areas visible (around the forehead and cheeks).</p>
+    <p>At first this seems to be the cost of larger step sizes, <strong>but</strong> there are some tricks we can use to hide these effects. We'll deal with the white patches first....</p>
+    <h2>Surface Lighting Effects</h2>
+    <p>The problem with the white patches is that the ray is outside a non-transparent region in one step and in the next it is deep within a dense region, it has <strong>skipped the surface</strong>.</p>
+    <p>To understand why this region is white, we have to understand how volume renderings are shaded (i.e., how the diffusive lighting works).</p>
+    <p>The reason why these rendering look so 3D is down to the <a href="diffusive lighting effect">diffusive lighting effect</a> that has been applied. In computer graphics, this is usually calculated using Lambertian Reflection (<a href="http://www.lighthouse3d.com/tutorials/glsl-tutorial/directional-lights-i/">see here for a full explanation</a>) where the intensity \(I\) (brightness) at a pixel is proportional to the angle between the light source direction \({\bf {L}}\)&nbsp;and the surface normal \({\bf{}n}\)</p>
+    <p style="text-align: center;">\(I\propto{\bf{}n}\cdot{\bf{}L}\)</p>
+    <p>But how is the normal of a voxel defined? A surface has a well defined normal, but how do you turn voxels into surfaces? To get around this, the gradient of the density is used to define an "effective" surface normal.</p>
+    <p>\({\bf{}n}(x,y,z)\approx\textrm{normalize}\left(\nabla\rho(x,y,z)\right)\)</p>
+    <p>Here,\(\rho(x,y,z)\) is the density at our Voxel and \(\nabla\) is <a href="http://en.wikipedia.org/wiki/Del#Gradient">the gradient operator</a>. Typically, the gradient is approximated using the central difference approximation</p>
+    <p style="text-align: center;">\(\nabla_x\rho(x,y,z)\approx\frac{\rho(x+1,y,z)-\rho(x-1,y,z)}{2}\)</p>
+    <p>This equation is repeated for each dimension x,y,z, and these three components are the components of the surface normal.</p>
+    <p>So we have defined an effective surface normal,&nbsp; why are those voxels white? Well, the ray has jumped into a high density region (the skull). And inside the skull (for this dataset) all the voxels have <strong>exactly the same value of density</strong>! This is because the scanner (or whatever took the image) has run out of range to describe the data and just set the density to the max value (255 in this 8bit data). But, if a voxel is surrounded by other voxels all with the same density, this means that the gradient is zero!</p>
+    <p style="text-align: center;">\(\nabla\rho(x,y,z)={\bf{}0}\)</p>
+    <p>We can't make a normal out of this as a zero vector has no direction. So instead, no shading is applied here and we either get bright white or dark black spots instead, depending on the shaders implementation.</p>
+    <p>We can visualize this if we render the normal information as a color. We can see that the white areas in the above picture correspond to areas without gradients (black areas in right image).</p>
+    <div class="jce_caption"><a target="_blank" class="jcebox" href="img/3UnblurredNormals.jpg" title="Same image as above but each component of the effective surface normal is rendered as a color. Dark areas have no normals/gradients."><img height="296" width="400" src="img/3UnblurredNormals.jpg" alt="3UnblurredNormals" /></a>
+      <div style="text-align: center;">Same  image  as above but each component of the effective surface normal  is  rendered as a color. Dark areas have no normals/gradients.</div>
+    </div>
+    <h2>One Solution: Smoothing</h2>
+    <p><a href="http://graphicsrunner.blogspot.com/2009/01/volume-rendering-102-transfer-functions.html">One typical solution to this problem</a> is to blur the components of the gradient.</p>
+    <p>The gradients are calculated as usual, but a gaussian blur is used afterwards to spread and smudge the surface normals from the surface voxels into the voxels without a gradient. This way, voxels without a gradient will still get some surface-normal information from nearby voxels with the added benefit that the rendering as a whole becomes a little smoother.</p>
+    <p>The problem with this technique is that blurring normals is not really well defined and it is hugely expensive! If you wish to render live data with this technique, all of your time will be spent on the 3D gaussian filter pass.</p>
+    <p>This technique still doesn't cure all the problems though, a 5x5 gaussian filter was applied to the normal data and the result is presented on the left.</p>
+    <div class="jce_caption"><a target="_blank" class="jcebox" href="img/Comparison.jpg" title="Rendering with small step size (left) and with a 10x larger step size (right)"><img height="400" width="672" style="width:50%;height:auto;" src="img/Comparison.jpg" alt="Comparison" /><a href="img/2Blurred.jpg" title="The same image as above, but using Gaussian blurred surface normals. The quality is improved but still not good." target="_blank" class="jcebox"><img height="462" width="400" src="img/2Blurred.jpg" alt="2Blurred" /></a>
+      <div style="text-align: center;">Small (left) and large (middle and right) step sizes, but the rightmost image is using Gaussian blurred surface normals. The quality is improved but still not good.</div>
+    </div>
+    <h2>Another, Faster and Better Solution: Reusing Normals</h2>
+    <p>Instead of blurring we can use another trick at draw time, inside the fragment/pixel shader. While our ray is stepping through the volume, we keep track of the previous step's normal. If the ray enters a region where there are no well defined normals, the ray simply reuses the old normal!</p>
+    <p>This technique works very well as even though the area outside the solid area is transparent, it still usually contains a density gradient, and this gradient is close to what the true gradient of the surface is. We also only look at the gradient which is relevant to the side of the surface we're on!</p>
+    <p>We can compare the benefits of this technique below (click for high resolution), before we enable normal reuse we have</p>
+    <div class="jce_caption"><a href="img/1Unblurred.jpg" title="1Unblurred.jpg" target="_blank" class="jcebox"><img height="300" width="254" src="img/1Unblurred.jpg" alt="1Unblurred" /></a><a href="img/3UnblurredNormals.jpg" title="3UnblurredNormals.jpg" target="_blank" class="jcebox"><img height="300" width="404" src="img/3UnblurredNormals.jpg" alt="3UnblurredNormals" /></a></div>
+    <p>And after we have</p>
+    <div class="jce_caption"><a href="img/5LastNormal.jpg" title="5LastNormal.jpg" target="_blank" class="jcebox"><img height="300" width="400" src="img/5LastNormal.jpg" alt="5LastNormal" /></a><a href="img/4LastNormal.jpg" title="4LastNormal.jpg" target="_blank" class="jcebox"><img height="300" width="400" src="img/4LastNormal.jpg" alt="4LastNormal" /></a></div>
+    <p>A great improvement, still some artifacts but very cheaply rendered!</p>
+    <h2>Ray Dithering</h2>
+    <p>The final artifact we will fix is the banding present in all the above images. This banding is <a href="http://en.wikipedia.org/wiki/Aliasing">also known as "aliasing"</a>, and is due to the large step size missing small changes in the image.</p>
+    <p>A common technique to remove aliasing <a href="http://en.wikipedia.org/wiki/Dither">is known as dithering</a>. The trick is to introduce just enough randomness in the image to remove the aliases and replace them with speckles. This random noise must be high frequency and repeatable (i.e., the image shouldn't flicker).</p>
+    <p>This is remarkably simple to implement in GLSL, to the starting point of every ray, a random fraction of the step size should be added. The following GLSL does this using the fragment coordinate as a seed.</p>
+    <div class="jce_caption" style="font-family:mono">float random = fract(sin(gl_FragCoord.x * 12.9898 <br />&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp; + gl_FragCoord.y * 78.233) * 43758.5453);<br /> vec3 rayPos = RayOrigin + rayDirection * (tnear + StepSize * random);
+    </div>
+    <p>To finish we'll do a before and after dithering (again, you can click on the images for a higher resolution version)....</p>
+    <div class="jce_caption">
+      <a href="img/5LastNormal.jpg" title="5LastNormal.jpg" target="_blank" class="jcebox"><img height="300" width="400" src="img/5LastNormal.jpg" alt="5LastNormal" /></a> <a href="img/6LastNormalWithNoise.jpg" title="6LastNormalWithNoise.jpg" target="_blank" class="jcebox"><img height="300" width="318" src="img/6LastNormalWithNoise.jpg" alt="6LastNormalWithNoise" /></a>
+    </div>
+    <p>Finally, the image at the top of this article was rendered with a smaller step size to clearly resolve the small holes in the volume around the cheek and forehead.</p>
+    <h2>Full Shader Code</h2>
+    <p>The current version of my Volume rendering shaders is available here: <a href="https://github.com/toastedcrumpets/DynamO/blob/master/src/magnet/magnet/GL/shader/volume.hpp">volumeShader.hpp</a></p>
+    <h2>Acknowledgements</h2>
+    <p>The volume data of a <a href="http://www9.informatik.uni-erlangen.de/External/vollib/">male skull and bonsai tree was obtained from this website</a> and I'd like to thank <a href="http://graphicsrunner.blogspot.com/2009/01/volume-rendering-101.html">Kyle Hayward</a> and <a href="http://prideout.net/blog/?p=64">Philip Rideout</a> for their excellent tutorials on volume ray tracing.</p>
+  </body>
+</html>
