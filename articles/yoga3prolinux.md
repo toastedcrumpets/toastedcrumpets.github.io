@@ -1,0 +1,119 @@
+# Linux (ubuntu) on the Yoga  3 Pro
+
+I love my Yoga 3 Pro, but a lot of its functionality has never *just
+worked* on linux. Here's my notes for whenever I have to reinstall the
+machine.
+
+## GRUB/terminal text size (and rendering speed)
+
+While I don't mind the extremely small font, the console actually
+renders slowly due to the enormous screen resolution. Following advice
+from here
+https://www.ctrl.blog/entry/how-to-lenovo-yoga3-pro-linux.html, I
+modified ```/etc/default/grub``` to have
+```GRUB_GFXMODE=1280x1024```. This sorts out grub. Once modesetting
+takes over its nice to just bump the font size up a little to make
+working without X more pleasant. I also modified
+```/etc/default/console-setup``` to have ```FONTSIZE=16x32``` and
+```FONTFACE="Terminus"```.
+
+
+## Suspend/resume
+
+All works now with 20.04. Only issue seems to be with the touchpad
+being alternately disabled/enabled on suspend resume. I'm guessing the
+touchpad enable key is incorrectly bound but I've not dug to figure
+that out. This is a real problem as the actual tocuhpad enable key is
+non-functional too, so lets fix that.
+
+## Special keys 
+
+We need to bind the key, dmesg show's that this key is currently
+unmapped. Create a file at
+```/etc/udev/hwdb.d/90-custom-keyboard.hwdb``` with the following content:
+
+    evdev:atkbd:dmi:bvn*:bvr*:bd*:svn*:pn*:pvr*
+     KEYBOARD_KEY_0xbe=f21 #Re-enable touchpad!!
+
+Be warned though, this may match against external keyboards
+
+## Automatic screen rotation and backlight brightness
+
+I'm on Kubuntu, which seems to miss automatic brightness controls in
+the Power control panel (like Ubuntu supposedly has). To fix this and
+get automatic screen rotation I wrote the script below and placed it
+at ```/usr/bin/auto_backlight_screen_rotation.sh```.
+
+    #!/bin/sh
+    # Auto rotate screen based on device orientation
+    
+    # Receives input from monitor-sensor (part of iio-sensor-proxy package)
+    # Screen orientation and launcher location is set based upon accelerometer position
+    # Launcher will be on the left in a landscape orientation and on the bottom in a portrait orientation
+    # This script should be added to startup applications for the user
+    
+    # Clear sensor.log so it doesn't get too long over restarts
+    > sensor.log
+    
+    # Launch monitor-sensor and store the output in a variable that can be parsed by the rest of the script
+    monitor-sensor >> sensor.log 2>&1 &
+    
+    MAXBL=$(cat /sys/class/backlight/intel_backlight/max_brightness)
+    
+    # Parse output or monitor sensor to get the new orientation whenever the log file is updated
+    # Possibles are: normal, bottom-up, right-up, left-up
+    # Light data will be ignored
+    while inotifywait -e modify sensor.log; do
+    # Read the last line that was added to the file and get the orientation
+    ORIENTATION=$(tail -n 1 sensor.log | grep 'orientation' | grep -oE '[^ ]+$')
+    LUX=$(tail -n 1 sensor.log | grep 'Light changed' | gawk '{print $3}')
+    echo "Orientation " $ORIENTATION " LUX " $LUX
+    
+    #IFF there's a lux value change, then compute the brightness
+    echo "PONG"
+    if [ ! -z $LUX ]; then
+        MinBackLight=0.2 # Minimum fraction of backlight power
+        DeltaBackLight=0.8 # Maximum fraction of backlight power
+        LowLUX=100
+        HighLUX=1000
+    
+        #Just linearly scale the range LowLUX->HighLUX onto the range of backlight percentages above
+        BL=$(echo "print(int(($MinBackLight+$DeltaBackLight*min(1.0,max(0,($LUX-$LowLUX)/($HighLUX-$LowLUX))))*$MAXBL))" | python3)
+        
+        echo $BL > /sys/class/backlight/intel_backlight/brightness
+    fi
+    
+    TOUCHSCREEN="ATML1000:00 03EB:8A10"
+    TRANSFORM="Coordinate Transformation Matrix"
+    
+    # Set the actions to be taken for each possible orientation (IFF an orientation change was detected)
+    
+    # If you are using Ubuntu you might want to adjust the launcher position, e.g.
+    #&& gsettings set com.canonical.Unity.Launcher launcher-position Left
+    #&& gsettings set com.canonical.Unity.Launcher launcher-position Bottom
+    
+    echo "PING"
+    case "$ORIENTATION" in
+    normal)
+    xrandr --output eDP-1 --rotate normal && xinput set-prop "$TOUCHSCREEN" "$TRANSFORM" 1 0 0 0 1 0 0 0 1 ;;
+    bottom-up)
+    xrandr --output eDP-1 --rotate inverted && xinput set-prop "$TOUCHSCREEN" "$TRANSFORM" -1 0 1 0 -1 1 0 0 1 ;;
+    right-up)
+    xrandr --output eDP-1 --rotate right && xinput set-prop "$TOUCHSCREEN" "$TRANSFORM" 0 1 0 -1 0 1 0 0 1 ;;
+    left-up)
+    xrandr --output eDP-1 --rotate left && xinput set-prop "$TOUCHSCREEN" "$TRANSFORM" 0 -1 1 1 0 0 0 0 1 ;;
+    esac
+    done
+
+If you want to get this script to run as a normal user (rather than
+root), you need to modify the systemd script and also allow a
+particular group to access the backlight controls. Putting the
+following script into ```/etc/udev/rules.d/backlight.rules``` allows
+users in the plugdev group to do just that.
+
+    ACTION=="add", SUBSYSTEM=="backlight", KERNEL=="intel_backlight", RUN+="/bin/chgrp plugdev /sys/class/backlight/%k/brightness"
+	ACTION=="add", SUBSYSTEM=="backlight", KERNEL=="intel_backlight", RUN+="/bin/chmod g+w /sys/class/backlight/%k/brightness"
+
+I then add this to my X startup using the Autostart tool in the
+menu. I've tried to get this for the login screen but getting Xsession
+set up right was too painful.
