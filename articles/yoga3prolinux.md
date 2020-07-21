@@ -40,9 +40,9 @@ Be warned though, this may match against external keyboards
 ## Automatic screen rotation and backlight brightness
 
 I'm on Kubuntu, which seems to miss automatic brightness controls in
-the Power control panel (like Ubuntu supposedly has). To fix this and
-get automatic screen rotation I wrote the script below and placed it
-at ```/usr/bin/auto_backlight_screen_rotation.sh```.
+the Power control panel (like Ubuntu supposedly has) as well as
+automatic screen rotation. To fix this I wrote the script below and
+placed it at ```/usr/bin/auto_backlight_screen_rotation.sh```.
 
     #!/bin/sh
     # Auto rotate screen based on device orientation
@@ -117,3 +117,15 @@ users in the plugdev group to do just that.
 I then add this to my X startup using the Autostart tool in the
 menu. I've tried to get this for the login screen but getting Xsession
 set up right was too painful.
+
+The LUX sensor seems to be particular about when it decides to report
+the light levels. The device is somewhere under this
+```/sys/bus/iio/devices/iio:deviceX``` where X changes value from boot
+to boot. Usually in the range 0-4. There's two issues that might be
+stopping the sensor. First, its buffer might not be enabled, i.e. for X=2
+```/sys/bus/iio/devices/iio:device2/buffer/enable```. If you can't set
+this to 1, then check that an appropriate trigger has been set. In
+this system,
+```/sys/bus/iio/devices/iio:device2/trigger/current_trigger``` should
+be set to ```als-dev2`` (again assuming if X is 2).
+
