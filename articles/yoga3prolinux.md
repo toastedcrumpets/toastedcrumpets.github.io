@@ -15,17 +15,17 @@ heavily throttles the CPU/GPU package under load. For example, you
 start a video then your laptop will stutter under load after around
 10s just moving the mouse. The issue is the balanced profile limits
 the average power-draw of the package, thus this isn't even a
-temperature issue but some brain-dead "energy saving" measure. 
+temperature issue but some brain-dead "energy saving" measure.
 
 Amazingly, Linux has the tools to fix this and windows 10 does
 not. You need to install some tools:
 	
-	# sudo apt install linux-tools-generic linux-oem-5.6-tools-common
+	sudo apt install linux-tools-generic linux-oem-5.6-tools-common
 	
 If you run the tool, you should be informed you're on the "balance"
 profile:
 
-	# sudo x86_energy_perf_policy 
+	sudo x86_energy_perf_policy 
 	cpu0: EPB 6
 	cpu1: EPB 6
 	cpu2: EPB 6
@@ -34,18 +34,33 @@ profile:
 The 6 means balanced. You then need to set the Energy Performance Bias
 (EPB) to balance-performance or performance.
 
-	# sudo x86_energy_perf_policy --epb balance-performance
+	sudo x86_energy_perf_policy --epb balance-performance
 	
 Running the tool again gives you a 4 and a useful laptop once again!
 
-	# sudo x86_energy_perf_policy 
+	sudo x86_energy_perf_policy 
 	cpu0: EPB 4
 	cpu1: EPB 4
 	cpu2: EPB 4
 	cpu3: EPB 4
 
 Battery life is nearly unaffected and the system remains responsive
-under heavy load.
+under heavy load. To make these settings permanent, install a tool
+like TLP to manage this.
+
+	sudo add-apt-repository ppa:linrunner/tlp
+	sudo apt update
+	sudo apt install tlp tlp-rdw
+
+Then edit the configuration in ```/etc/tlp.conf``` and uncomment (and
+change) the lines.
+	
+	CPU_ENERGY_PERF_POLICY_ON_AC=balance_performance
+	CPU_ENERGY_PERF_POLICY_ON_BAT=balance_performance
+
+Really, you do not want anything less than balance_performance. I also
+set p states to allow max on battery and a few others, but this is to
+your taste rather than essential.
 
 ## GRUB/terminal text size (and rendering speed)
 
