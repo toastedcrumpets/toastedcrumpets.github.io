@@ -4,6 +4,49 @@ I love my Yoga 3 Pro, but a lot of its functionality has never *just
 worked* on linux. Here's my notes for whenever I have to reinstall the
 machine.
 
+## Power management/profiles (i.e. terrible performance!)
+
+Lenovo basically abandoned these laptops after windows 10 came about
+(and never supported linux). They used to have a Energy Management
+tool on Windows 8.1 that would let you set the performance policy,
+they replaced this with a ACPI driver for Win10. Unfortunately, this
+new ACPI driver locks the system on a "balanced" energy profile which
+heavily throttles the CPU/GPU package under load. For example, you
+start a video then your laptop will stutter under load after around
+10s just moving the mouse. The issue is the balanced profile limits
+the average power-draw of the package, thus this isn't even a
+temperature issue but some brain-dead "energy saving" measure. 
+
+Amazingly, Linux has the tools to fix this and windows 10 does
+not. You need to install some tools:
+	
+	# sudo apt install linux-tools-generic linux-oem-5.6-tools-common
+	
+If you run the tool, you should be informed you're on the "balance"
+profile:
+
+	# sudo x86_energy_perf_policy 
+	cpu0: EPB 6
+	cpu1: EPB 6
+	cpu2: EPB 6
+	cpu3: EPB 6
+
+The 6 means balanced. You then need to set the Energy Performance Bias
+(EPB) to balance-performance or performance.
+
+	# sudo x86_energy_perf_policy --epb balance-performance
+	
+Running the tool again gives you a 4 and a useful laptop once again!
+
+	# sudo x86_energy_perf_policy 
+	cpu0: EPB 4
+	cpu1: EPB 4
+	cpu2: EPB 4
+	cpu3: EPB 4
+
+Battery life is nearly unaffected and the system remains responsive
+under heavy load.
+
 ## GRUB/terminal text size (and rendering speed)
 
 While I don't mind the extremely small font, the console actually
@@ -40,7 +83,7 @@ Be warned though, this may match against external keyboards
 ## Automatic screen rotation and backlight brightness
 
 I'm on Kubuntu, which seems to miss automatic brightness controls in
-the Power control panel (like Ubuntu supposedly has) as well as
+the Power control panel (like Ubuntu/Gnome supposedly has) as well as
 automatic screen rotation. To fix this I wrote the script below and
 placed it at ```/usr/bin/auto_backlight_screen_rotation.sh```.
 
@@ -115,8 +158,9 @@ users in the plugdev group to do just that.
 	ACTION=="add", SUBSYSTEM=="backlight", KERNEL=="intel_backlight", RUN+="/bin/chmod g+w /sys/class/backlight/%k/brightness"
 
 I then add this to my X startup using the Autostart tool in the
-menu. I've tried to get this for the login screen but getting Xsession
-set up right was too painful.
+menu. I've tried to get this for the login screen but getting the
+Xsession variable set up right was too much. I just run the script
+whenever I want rotation.
 
 The LUX sensor seems to be particular about when it decides to report
 the light levels. The device is somewhere under this
