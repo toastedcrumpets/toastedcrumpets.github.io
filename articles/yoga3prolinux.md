@@ -13,7 +13,7 @@ they replaced this with a ACPI driver for Win10. Unfortunately, this
 new ACPI driver locks the system on a "balanced" energy profile which
 heavily throttles the CPU/GPU package under load. For example, you
 start a video then your laptop will stutter under load after around
-10s just moving the mouse. The issue is the balanced profile limits
+30s just moving the mouse. The issue is the balanced profile limits
 the average power-draw of the package, thus this isn't even a
 temperature issue but some brain-dead "energy saving" measure.
 
@@ -187,4 +187,13 @@ this to 1, then check that an appropriate trigger has been set. In
 this system,
 ```/sys/bus/iio/devices/iio:device2/trigger/current_trigger``` should
 be set to ```als-dev2`` (again assuming if X is 2).
+
+# Enable GPU acceleration
+
+Its not the beefiest CPU by any stretch, so GPU acceleration is a must
+especially for modern web which has tons of rasterisation etc. Force
+enable GPU acceleration in Chrome, install and check video is
+accelerated using ```vainfo``` and install ```libva-glx2``` or
+```libva-x11-2``` (maybe).
+
 
