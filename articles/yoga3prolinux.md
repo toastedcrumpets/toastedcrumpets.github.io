@@ -197,3 +197,12 @@ accelerated using ```vainfo``` and install ```libva-glx2``` or
 ```libva-x11-2``` (maybe).
 
 
+# USB ethernet adapter support
+
+I use a cheap USB3.0 RTL 8153 GbE adapter to give me wired internet
+access. This tends to crash out network manager and prevent restart
+holding up the TLP process. To fix this we disable autosuspend on usb
+for the device using a udev rule. Make a file
+```/etc/udev/rules.d/usbethernet.rules``` and put the following in it
+
+	ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="8153", TEST=="power/control", ATTR{power/control}="on"
