@@ -12,7 +12,7 @@
 	url = https://github.com/hakimel/reveal.js.git
 [submodule "reveal.js-plugins"]
 	path = reveal.js-plugins
-	url = https://github.com/toastedcrumpets/reveal.js-plugins.git
+	url = https://github.com/rajgoel/reveal.js-plugins.git
 [submodule "js/jquery-dist"]
 	path = js/jquery-dist
 	url = https://github.com/jquery/jquery-dist.git

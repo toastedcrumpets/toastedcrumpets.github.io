@@ -63,16 +63,16 @@ body.print-pdf .chalkboard-button {
     width:100%;
 }
 
-.reveal .slide-menu-item.menu-section {
+.slide-menu-item.menu-section {
     font-size:0.9em;
     border-bottom: 4px double;
     border-top: 4px double;    
-    text-align: center;
+    text-align: center !important;
     padding: 0.25em;
     cursor:default;
 }
 
-.reveal .active-menu-panel li.selected.menu-section {
+.active-menu-panel li.selected.menu-section {
     background-color:inherit;
     color:inherit;
 }
