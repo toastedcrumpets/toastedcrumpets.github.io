@@ -196,6 +196,11 @@ enable GPU acceleration in Chrome, install and check video is
 accelerated using ```vainfo``` and install ```libva-glx2``` or
 ```libva-x11-2``` (maybe).
 
+If vainfo shows everything working, enable GPU acceleration in Chrome by ignoring the blacklist, enabling hardware acceleration, and then run chrome like this:
+
+``` /usr/bin/google-chrome-stable --ignore-gpu-blocklist --disable-features=UseChromeOSDirectVideoDecoder --use-gl=desktop --enable-features=VaapiVideoDecoder %U```
+
+Then check ```chrome://gpu``` to see that decode is enabled. Might need to install the hx254ify browser extension.
 
 # USB ethernet adapter support
 
