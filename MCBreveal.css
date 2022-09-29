@@ -76,3 +76,10 @@ body.print-pdf .chalkboard-button {
     background-color:inherit;
     color:inherit;
 }
+
+.twocolumn {
+   display: grid;
+   grid-template-columns: 1fr 1fr;
+   grid-gap: 10px;
+   text-align: left;
+}
