@@ -16,3 +16,6 @@
 [submodule "js/jquery-dist"]
 	path = js/jquery-dist
 	url = https://github.com/jquery/jquery-dist.git
+[submodule "reveal.js-menu"]
+	path = reveal.js-menu
+	url = https://github.com/denehyg/reveal.js-menu.git
