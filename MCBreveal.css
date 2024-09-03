@@ -26,18 +26,6 @@
     text-align:center;
 }
 
-.reveal .slides {
-    border:1px solid black;
-}
-
-body.print-pdf .hide-on-pdf,
-body.print-pdf .audio-controls,
-body.print-pdf .slide-menu,
-body.print-pdf .slide-menu-button,
-body.print-pdf .chalkboard-button {
-    display:none;
-}
-
 .reveal .center > * {
     margin-left:auto;
     margin-right:auto;
