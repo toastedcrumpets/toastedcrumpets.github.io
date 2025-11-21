@@ -1,0 +1,2943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background thermodynamics</title>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src=" https://cdn.jsdelivr.net/npm/jquery-ui@1.12.1/ui/widget.min.js "></script>
+    <link href=" https://cdn.jsdelivr.net/npm/jquery-ui@1.12.1/themes/base/theme.min.css " rel="stylesheet">
+    <script src=" https://cdn.jsdelivr.net/npm/bootstrap@4.5.1/dist/js/bootstrap.bundle.min.js "></script>
+    <link href=" https://cdn.jsdelivr.net/npm/bootstrap@4.5.1/dist/css/bootstrap.min.css " rel="stylesheet">
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+         window.MathJax = {
+   tex: {
+     inlineMath: [['$','$']],
+     processEscapes: true,
+     tags: "ams",
+     packages: ['base', 'ams', 'cancel']
+   },
+   startup: {
+     ready: () => {
+       var hash = window.location.hash.substr(1);
+       MathJax.startup.defaultReady();
+       MathJax.startup.promise.then(() => {
+	 /* Move all the anchors to a tags*/
+	 $('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').each((idx, el) => {
+	   var id = el.getAttribute('id');
+	   el.removeAttribute('id');
+	   $(el).wrapInner('<a class="anchor" href="#'+id+'" id="'+id+'"></a>');
+	 });
+	 $('#content').css('visibility', "visible");
+  $('.loading').remove();
+	 window.location.hash = "";
+	 window.location.hash = hash;
+       });
+     }
+   },
+   options: {
+     ignoreHtmlClass: 'tex2jax_ignore',
+     processHtmlClass: 'tex2jax_process'
+   },
+   loader: {
+     load: ['[tex]/cancel']
+   }
+ };
+    </script>
+</head>
+
+<body>
+    <div class="container-fluid bg-light py-3">
+        <div class="col-xl-10 m-auto bg-orange">
+        <h1 style="color:red">Warning</h1>
+        <p>
+            This article is some notes while I struggled to figure out thermodynamic
+            minimisation. There's some good bits but a lot I'd do differently now.
+            Certainly this is not the approach I'd use now either, so take what is useful 
+            and leave the rest!
+        </p>
+        </div>
+    </div>
+    <div class="col-xl-10 m-auto bg-white">
+        <h1 id="backgroundthermodynamics">Background thermodynamics</h1>
+        <p>
+            This section outlines the derivation of thermodynamics with a focus
+            on applied chemical thermodynamics. In short, thermodynamics is a
+            set of differential and algebraic constraints on state
+            variables. These constraints are really powerful, as they give you
+            relationships between real measurable (and immeasurable) properties
+            (the state variables). Ultimately we want to determine what will
+            happen to real fluids, thus in the end we focus on determining the
+            equilibrium state. But we're getting ahead of ourselves, lets
+            carefully argue everything out.
+        </p>
+        <h2 id="thermo-systems">Thermodynamic systems, variables, and state</h2>
+        <figure class="card float-right w-25">
+            <img src="/articles/img/balloon.svg" alt="A balloon." />
+            <figcaption class="card-body card-text">A closed balloon system (A) and an open system (B), both
+                exhibiting the observables of pressure, $p$, volume, $V$, and
+                temperature, $T$, which can be measured at (or over) its
+                boundary.</figcaption>
+        </figure>
+        <p>
+            First, lets define some terminology. A thermodynamic <em>system</em> is the partitioning of
+            some quantity of mass and energy from its <em>surroundings</em>
+            through an enclosing <em>boundary</em>. The key idea is the division
+            of what we are interested in (the system) from the uninteresting
+            (the surroundings).
+        </p>
+        <p>
+            The boundary of the system may be physical (e.g., the walls of a
+            vessel such as a balloon) or may be defined by some imaginary
+            division of space (e.g., a finite volume in a CFD simulation). If
+            the boundary is physical, then it may or may not be included as
+            part of the system. For example, water droplets in air have a
+            surface tension which acts like the skin of a balloon and pulls
+            the drop into a spherical shape. This "stretched elastic" surface has an
+            associated energy and it is at our discretion whether to include
+            the energy as part of the system or as part of the surroundings
+            (or neglect it entirely as an approximation).
+        </p>
+        <p>
+            Both physical and imaginary boundaries may be fixed or change shape
+            over time, we don't care about that in equilibrium thermodynamics,
+            only what the contents of the system is. If mass can pass through
+            the boundaries then the system is deemed <em>open</em> and <em>closed</em> if it
+            cannot.
+        </p>
+        <p>
+            The mass and energy contained inside a thermodynamic system may take
+            many forms, but only the <em>observable</em> properties at the
+            boundary of the system, such as volume, mass, surface area, and
+            pressure are visible to us. Thermodynamics focuses on these
+            observable variables and tries to find mathematical relationships
+            to link these variables together. Any other <em>internal</em> effect
+            the mass and energy of the system has cannot be seen unless it
+            appears at the boundary and so thermodynamics does not immediately
+            concern itself with these invisible properties. For example, a
+            thermometer measures the temperature at its surface/boundary with
+            the system it is inserted in. If the system is small enough, then
+            the observable properties should be approximately constant across
+            the system. For larger systems, we can always split it into smaller
+            and smaller sub-systems until the observable properties of a system
+            are approximately constant. Moving on, we will always assume each
+            system we consider is small enough (and thus homogeneous enough) to
+            ignore any changes in observable properties across its volume. We do
+            this so that we can assume all processes are reversible later to
+            keep us in the realm of equilibrium thermodynamics.
+        </p>
+        <p>
+            The sum total of the energy inside a system (the <em>internal
+                energy</em>) is not directly observable as most of it is
+            internally stored away from the boundary; however, the
+            conservation of energy tells us it must exist. It should come as
+            no surprise then that there are other <em>internal</em> variables, such as the entropy, which can
+            only be discerned indirectly and yet are very interesting to
+            thermodynamics (but <a href="#cycles">more on this later</a>).
+        </p>
+        <p>
+            The key external and internal variables are the
+            so-called <em>state</em> variables. These are the variables that
+            change whenever the system itself has changed. This is a circular
+            argument which is easy to understand for the external variables as
+            we only know if a system has changed if the observable properties
+            themselves have changed. Counter examples of non-state variables
+            are the age of the system or the distance it has moved (assuming
+            there's no external field like gravity to couple distance with
+            energy), as these non-state variables can change without anything
+            really happening to the system. If a complete set of state
+            variables is collected such that any change of the system results
+            in a change in one (or more) of the collected state variables then
+            we have what is called an <em>ensemble</em>. Which variables are
+            collected into an ensemble really depends on what we are observing
+            and how we are observing it. For example, perhaps our
+            external/observable variables are temperature and volume for a
+            balloon. However, we could also measure the balloon's pressure and
+            mass. Thermodynamics later tells us that the (molar) volume is
+            directly related to the pressure and temperature, so its redundant
+            to observe all of these variables; however, its important to
+            realise that all state variables are of equal importance, they are
+            all just observable quantities and we can calculate one from the
+            other once we have enough of them. As chemical engineers/chemists,
+            we like to talk about temperature and pressure all the time but
+            that does not mean that using volume/entropy/internal energy or
+            some free energy instead is not more valid. The mathematics does
+            not care. To try to "shake-off" the idea that some variables are
+            special, mathematicians have an "exercise" called the implicit
+            function theorem. Instead of writing $y=f(x)$, they write
+            $y-f(x)=0$ or $f'(y,\,x)=0$. This final form shows that $y$ and
+            $x$ are equal, either can be obtained from the other (under
+            certain conditions), i.e. $x=f^{-1}(y)$. A simple example of this
+            in thermodynamics is the ideal gas relationship,
+
+            \begin{align}\label{eq:idealgas} P\,V = N\,R\,T. \end{align}
+
+            If you've done any calculations with this you should be familiar
+            with rearranging this equation to make $P$, $V$, $N$, or $T$ the
+            subject of the equation,
+
+            \begin{align*} P &= N\,R\,T\,V^{-1} & V &= N\,R\,T\,P^{-1} \\N &=
+            P\,V \left(R\,T\right)^{-1} & T &= P\,V \left(N\,R\right)^{-1}.
+            \end{align*}
+
+            Thus its a good mental exercise to think of the ideal gas law as
+            $P\,V-N\,R\,T=0$ and realise that all state variables are equal in
+            importance.
+        </p>
+        <p>
+            Back to the "ensemble". The number of state variables needed to
+            build an ensemble really depends on the system studied. For
+            example, the thermodynamic system of a battery uses the same
+            variables as a balloon but also includes the electric potential
+            (and current) across its terminals as this is one way energy can
+            be transferred out the system. This is a key concept: an ensemble
+            is complete when any process connected to the transfer of mass
+            and/or energy in the system has its associated state
+            variables. These variables always come in "conjugate" pairs
+            (e.g. $p$ and $V$), but this is discussed more later.
+        </p>
+        <p>
+            Now that the initial terminology has been outlined, a governing
+            equation for the changes in the energy of a thermodynamic system can be
+            derived.
+        </p>
+        <h2 id="first-law">The fundamental equation</h2>
+        <p>
+            The power of thermodynamics arises from its ability to find simple
+            universal relationships between observable state variables. These
+            relationships are a direct consequence of the laws of
+            thermodynamics.
+        </p>
+        <p>
+            The <em>first law of thermodynamics</em> is an observation that
+            energy is neither created or destroyed but only transformed
+            between different forms. Every thermodynamic system may contain
+            internally some energy, $U$. The first law then allows us
+            immediately write $U_{sys.}+U_{surr.}=C$ where $C$ is a constant
+            and is the total energy of the universe but this equation is not
+            particularly useful. Lets look instead at how energy might be
+            transferred:
+
+            \begin{align}\label{eq:firstlaw} {\rm d} U_{sys.} = - {\rm
+            d}U_{surr.}, \end{align}
+
+            where the ${\rm d}X$ indicates an infinitesimal change in $X$.
+            This is called an <em>exact</em> differential as $U_{sys.}$ cannot
+            change without $U_{surr.}$ changing, thus the two variables are
+            always linked.
+        </p>
+        <p>
+            From further observation of real systems, two different types of
+            energy transfer are identified: <em>heat transfer</em> and "<em>work</em>",
+
+            \begin{align}\label{eq:initialebalance} {\rm d} U_{sys.} = - {\rm
+            d}U_{surr.} = \partial Q_{surr.\to {sys.}} - \partial W_{sys.\to
+            surr.}, \end{align}
+
+            where $\partial Q_{surr.\to {sys.}}$, is heat transferred to the
+            system due to temperature differences and $\partial W_{sys.\to
+            surr.}$ represents all forms of work carried out by the system
+            (the negative sign on the work term is a conventional choice). The
+            work term represents many forms of energy transfer, so why is heat
+            transfer singled out? Well, it appears that Nature wants to
+            maximise heat transfer over work whenever possible, and we'll get
+            back to this later when reversibility is introduced.
+        </p>
+        <figure class="card float-right w-25">
+
+            <a title="By Zephyris (Own work) [CC BY-SA 3.0 (http://creativecommons.org/licenses/by-sa/3.0) or GFDL (http://www.gnu.org/copyleft/fdl.html)], via Wikimedia Commons"
+                href="https://commons.wikimedia.org/wiki/File%3A4StrokeEngine_Ortho_3D_Small.gif"><img
+                    alt="4StrokeEngine Ortho 3D Small" src="/articles/img/4StrokeEngine_Ortho_3D_Small.gif" /></a>
+            <figcaption class="card-body card-text">Engines cycle back to their initial starting state, and
+                thus are designed to perform arbitrary amounts of work without
+                changing their state. Of course, this ignores wear and tear of the
+                engine.</figcaption>
+        </figure>
+        <p>
+            You should note that a $\partial$ symbol is used for the
+            work/heat-transfer terms to indicate <em>inexact differential</em>
+            relationships. A thermodynamic system may transfer arbitrarily large
+            amounts of heat, and perform arbitrarily large amounts of work, but
+            only the remainder $(\partial Q_{\to {sys.}}-\partial W_{sys.\to surr.})$
+            will actually cause a change in the energy $U_{sys.}$.
+
+            The internal energy is a <em>state</em> variable as it describes the
+            state of the system; however, work and heat transfer are not.
+        </p>
+        <p>
+            A physical example which illustrates this include engines, which
+            are thermodynamic systems that can perform arbitrary amounts of
+            work provided sufficient heat/energy is supplied but they return
+            to their initial state at the end of every cycle. An inexact
+            differential implies there is no unique relationship between the
+            variables (we cannot integrate this equation). Interestingly,
+            inexact differentials can often be transformed into simpler <em>exact</em> differentials
+            through the use of constraints. For example, if the engine is seized
+            and no work can be carried out ($\partial W_{sys.\to surr.}=0$),
+            then only heat transfer can change the energy of the system and we
+            now have an exact differential relationship, ${\rm d}U_{sys.}={\rm
+            d}Q_{\to {sys.}}$. This constraint is far too restrictive in general
+            and another constraint, known as reversibility, must be invoked to
+            generate exact differential equations we can integrate.
+        </p>
+        <p>
+            In the next two subsections, the concept of reversibility is
+            introduced through consideration of cycles and is used to find exact
+            differential descriptions of work and heat.
+        </p>
+        <h3 id="cycles">Cycles, reversibility, and heat</h3>
+        <p>
+            A thermodynamic <em>cycle</em> is a <em>process</em> applied to a
+            thermodynamic system which causes its state (and its state
+            variables) to change but eventually return to its initial state (and
+            so it also returns to the initial values of its state
+            variables). For example, the combustion chamber inside an engine
+            will compress and expand during its operation but it returns to its
+            starting volume after each cycle. This leads to the following
+            identity where the sum/integral of the changes over a cycle are
+            zero, i.e., $\oint_{\rm cycle} {\rm d} V=0$, and similar identites
+            must also apply for every state variable.
+        </p>
+        <p>
+            In 1855, Clausius observed that the integral of the heat transfer
+            rate over the temperature is always negative when measured over a
+            cycle,
+
+            \begin{align*} \oint_{\rm cycle} \frac{\partial Q_{surr.\to
+            {sys.}}}{T_{sys.}}\le0. \end{align*}
+
+            This is known as the Clausius inequality. It was found that this
+            inequality approaches zero in the limit that the cycle is
+            performed slowly. This limiting result indicates that the kernel
+            of the integral actually contains a state variable, i.e.,
+
+            \begin{align}\label{eq:entropydefinition} {\rm d} S_{sys.} &=
+            \frac{\partial Q_{surr.\to {sys.}}}{T_{sys.}}; & \text{(assuming slow internal changes)}, \end{align}
+
+            where $S_{sys.}$ is the state variable known as <em>entropy</em> of
+            the system. Interestingly, the entropy (like the internal energy) is
+            not directly observable and its existence is only revealed by this
+            inequality.
+        </p>
+        <p>
+            As the inequality is generally negative over a cycle, it indicates
+            that entropy always increases and must be removed from a system to
+            allow it to return to its initial state (except in the limit of slow
+            changes). This has led to the terminology of
+            the <em>irreversible</em> cycle, $\oint_{\rm cycle}{\rm d}S>0$, and
+            the idealised <em>reversible</em> cycle, $\oint_{\rm cycle}{\rm
+            d}S=0$, which can be returned to its starting state without removing
+            entropy.
+        </p>
+        <p>
+            If the Clausius inequality is true, <em>the total entropy
+                of a isolated system can only increase over time</em>. Assuming the
+            universe is an isolated system (at least over the timescales we're
+            interested in), our thermodynamic system and its surroundings must
+            always together have a positive (or zero) entropy change.
+        </p>
+        <p>
+            One last thing to note, thermodynamic processes which are not
+            cycles may also be reversible or irreversible. For a general
+            process to be reversible the total entropy change of the system
+            and its surroundings together must remain zero. This allows the
+            entropy to increase or decrease in the system, but only if the
+            surroundings have a compensating opposite change. Let's now
+            introduce the various forms of work for comparison.
+        </p>
+        <h3 id="Work">Work</h3>
+        <figure class="card float-right w-25">
+            <img src="/articles/img/balloon_work.svg" alt="A balloon." />
+            <figcaption class="card-body card-text">Both popping a balloon (left) and releasing it untied
+                (right) results in the same final state (air outside the balloon);
+                however, releasing the air slowly through the neck allows work to
+                be extracted causing the balloon to fly around.</figcaption>
+        </figure>
+        <p>
+            The work term $\partial W_{sys.\to surr.}$ represents all methods of
+            transferring of energy other than as heat. Reversible paths reduce
+            total entropy changes to zero, which minimizes the heat transferred
+            and actually maximizes the amount of work performed by the system
+            for a given process. It also turns work into an exact differential!
+        </p>
+        <p>
+            As an illustrative example, consider the emptying of a balloon via
+            popping it versus untying the neck and letting it go. In the first
+            case, no work is done as the air is immediately released into the
+            surroundings: this is the quickest path of deflating the balloon
+            thus it maximizes entropy. Untying the neck, the air jet leaving the
+            balloon will perform work by propelling the balloon around the room
+            (thus yielding kinetic energy). This slower release of air has
+            allowed work to be extracted.
+        </p>
+        <p>
+            All work can be expressed as a generalized driving <em>force</em>,
+            $\vec{F}_{sys.}$, which is <em>displaced</em> by a change in the
+            corresponding generalized distance, $\vec{L}_{sys.}$. For the
+            balloon, the force is the pressure difference in the neck (and the
+            air resistance, which should be equal and opposite when the system
+            is reversible) and the distance is the travel of the balloon. The
+            reversible limit corresponds to infinitesimally slow/small changes
+            of the distance (i.e., ${\rm d}\vec{L}$) allowing all opposing
+            forces time to remain in balance resulting in the following general
+            expression for the work.
+
+            \begin{align*}
+            {\rm d}W_{sys.} &= \sum \vec{F}_{sys.}\cdot {\rm d}\vec{L}_{sys.} & \text{(assuming reversibility)}.
+            \end{align*}
+        </p>
+        <p>
+            For the balloon, there are three forms of work taking place. First,
+            as the volume of the balloon is decreased work must be performed to
+            compress the volume against the pressure of the air within. The
+            reversible <em>pressure-volume</em> work is then as follows,
+
+            \begin{align}\label{eq:pressurevolumework}
+            {\rm d} W_{{sys.},pV} = p_{sys.}\,{\rm d}V_{sys.},
+            \end{align}
+
+            where the pressure $p$ is the generalised force and the volume $V$
+            is the generalised displacement. In addition, the balloon itself is
+            shrinking, releasing the tension within its elastic surface. This is
+            known as <em>surface</em> work,
+
+            \begin{align}\label{eq:surfacework}
+            {\rm d} W_{{sys.},surface} = \gamma_{sys.}\,{\rm d}\Sigma_{sys.},
+            \end{align}
+
+            where $\gamma_{sys.}$ is the surface tension and $\Sigma_{sys.}$ is the surface
+            area.
+        </p>
+        <p>
+            As air leaves the balloon through the neck it will carry away energy
+            with it. This is known as <em>chemical</em> work,
+
+            \begin{align}\label{eq:materialwork}
+            {\rm d} W_{{sys.},mass} = -\sum_i^{N_C} \mu_{i,{sys.}}\,{\rm d} N_{i,{sys.}},
+            \end{align}
+
+            where the chemical potential, $\mu_{i,{sys.}}$, is the energy added
+            to the system if one mole of the component $i$ (from one of the
+            $N_C$ components of the system) is added to or removed from the
+            system by any process (e.g., flow through the boundaries or internal
+            reactions). The definition of a component, $i$, in a thermodynamic
+            system is flexible and may be used to represent a single type of
+            atom, molecule, or elementary particle (i.e., electrons), or even a
+            mixture of molecules (such as "air").
+        </p>
+        <p>
+            The term ${\rm d} N_{i,{sys.}}$ represents changes in the amounts of
+            a species $i$. This change may be due to mass flowing in or out of a
+            system, but it may also result from reactions within a system;
+            However, for <em>closed</em> system (a system which cannot exchange
+            mass with any other system), chemical work is impossible and thus
+            the conservation of energy requires that the following holds true
+            (even if ${\rm d} N_{i,{sys.}}\neq 0$ due to internal processes such
+            as reactions),
+
+            \begin{align*}
+            \sum_i^{N_C} \mu_{i,{sys.}}\,{\rm d} N_{i,{sys.}} &= 0 & \text{for closed systems}.
+            \end{align*}
+
+            Closed systems are typical during process/unit-operation
+            calculations; however, as these closed systems are often composed of
+            multiple open sub-systems (i.e. multiple interacting phases within
+            a closed vessel) the chemical work term is always useful to retain.
+        </p>
+        <h3 id="fund-eq-summary">Summary of the fundamental equation</h3>
+        <p>
+            In summary, under the constraint of a reversible system, the
+            expression for entropy (Eq.&nbsp;\eqref{eq:entropydefinition}) and
+            any relevant work terms (Eq.&nbsp;\eqref{eq:pressurevolumework}-\eqref{eq:materialwork}) can be substituted
+            into
+            the energy balance
+            of Eq.&nbsp;\eqref{eq:initialebalance}, to yield the fundamental
+            thermodynamic equation,
+
+            \begin{align}\label{eq:fundamentalThermoRelation}
+            {\rm d} U &= T\,{\rm d}S -p\,{\rm d}V +\sum_i^{N_C} \mu_{i}\,{\rm d} N_{i}+\cdots,
+            \end{align}
+
+            where the subscripts have been dropped from every term for
+            convenience. Other work terms, such as the surface or electrical
+            work, can be added to this equation depending on the system studied;
+            however, the pressure-volume and chemical work terms are the most
+            important from a process engineering perspective.
+        </p>
+        <h3 id="UEuler">Solution of the fundamental equation</h3>
+        <p>
+            As we have an exact differential in
+            Eq.\eqref{eq:fundamentalThermoRelation} if the internal energy is
+            taken as function of $U(S,\,V,\,\left\{N_i\right\})$, then the total
+            derivative of the internal energy in these variables is as follows,
+
+            \begin{align*}
+            {\rm d}U= \left(\frac{\partial U}{\partial S}\right)_{V,\left\{N_j\right\},\cdots}{\rm d}S +
+            \left(\frac{\partial U}{\partial V}\right)_{S,\left\{N_j\right\},\cdots}{\rm d}V +
+            \sum_i^{N_C}\left(\frac{\partial U}{\partial N_i}\right)_{S,V,\left\{N_{j\neq i}\right\},\cdots}{\rm d}
+            N_{i}+\cdots.
+            \end{align*}
+
+            where, for clarity, the variables which are held constant while a
+            partial derivative is taken are written as subscripts on the
+            parenthesis surrounding the derivative (this is needed for clarity
+            as in thermodynamics we often change the set of independent and
+            dependent variables).
+        </p>
+        <p>
+            Comparing the total derivative above to the fundamental
+            thermodynamic relation of Eq.\eqref{eq:fundamentalThermoRelation}
+            yields the following definitions of the partial derivatives,
+
+            \begin{align*}
+            \left(\frac{\partial U}{\partial S}\right)_{V,\left\{N_{j}\right\},\cdots}&= T
+            &
+            \left(\frac{\partial U}{\partial V}\right)_{S,\left\{N_j\right\},\cdots}&=-p
+            &
+            \left(\frac{\partial U}{\partial N_i}\right)_{S,V,\left\{N_{j\neq i}\right\},\cdots}&=\mu_i.
+            \end{align*}
+
+            This is the first indication that thermodynamics is a powerful tool
+            as it has already found a differential relationship between the
+            internal energy and the intensive properties. Also, as the variables
+            of $U(S,\,V,\,\left\{N_i\right\})$, are all extensive, Euler's
+            solution for homogeneous functions applies.
+        </p>
+        <div class="card">
+            <div class="card-header">Proof of solution for homogeneous functions</div>
+            <div class="card-body">
+                Consider some function (in our case an extensive thermodynamic
+                property), $Z$. Assume that the property is only a function of the
+                extensive quantities $\left\{{sys.}_i\right\}$ (these may be the molar
+                amounts $\left\{N_i\right\}$, volume $V$, and entropy $S$ which
+                are all extensive). If all of the extensive properties
+                $\left\{A_i\right\}$ are scaled equally by some factor, $k$, the
+                extensive thermodynamic property must also scale. Thus,
+
+                \begin{align*}
+                Z\left(\left\{k\,A_{i}\right\}\right) = k\,Z\left(\left\{A_{i}\right\}\right),
+                \end{align*}
+
+                where $k$ is some arbitrary scaling factor. $Z$ is therefore a
+                <a href="https://en.wikipedia.org/wiki/Homogeneous_function">homogeneous
+                    function</a> of first order in $\left\{A_i\right\}$. Taking the
+                derivative of both sides with respect to $k$ (chain rule on the
+                LHS):
+
+                \begin{align*}
+                \frac{\partial \left\{k\,A_{i}\right\}}{\partial k}\cdot\frac{\partial}{\partial
+                \left\{k\,A_{i}\right\}}Z\left(\left\{k\,A_{i}\right\}\right) = \frac{\partial }{\partial k}
+                k\,Z\left(\left\{A_{i}\right\}\right)\\
+                \left\{A_{i}\right\}\cdot\frac{\partial}{\partial
+                \left\{k\,A_{i}\right\}}Z\left(\left\{k\,A_{i}\right\}\right) = Z\left(\left\{A_{i}\right\}\right)
+                \end{align*}
+
+                At this point it is selected that $k=1$ and expanding the dot
+                product as a sum,
+
+                \begin{align*}
+                Z\left(\left\{A_{i}\right\}\right) = \sum_{i}A_{i} \frac{\partial Z}{\partial A_{i}}
+                \end{align*}
+
+                This allows us to solve for $Z$ if the partial derivatives in
+                terms of each of its extensive parameters are known.
+            </div>
+        </div>
+        <p>
+            This allows the equation to be "solved" immediately as it is a
+            first-order homogeneous function of the extensive properties.
+
+            \begin{align}\label{eq:intEnergy}
+            U= T\,S - p\,V + \sum_i^{N_C}\mu_i\,N_i+\cdots.
+            \end{align}
+
+            This is the remarkably simple solution for the internal energy which
+            is the first
+            <em>thermodynamic potential</em> we encounter.
+        </p>
+        <h3 id="natural-variables">Natural variables</h3>
+        <p>
+            When performing calculations in thermodynamics, we are free to
+            specify our system state using any of the state variables introduced
+            so far
+            $(U,\,T,\,S,\,p,\,V,\,\left\{\mu_i\right\}^{N_C},\,\left\{N_i\right\}^{N_C})$,
+            but how many are required and which ones are independent? Each term
+            of the fundamental thermodynamic equation consists of a
+            so-called <em>conjugate pairing</em> of an <em>intensive</em>
+            property such as $T$, $p$, or $\mu_i$ and a corresponding
+            conjugate <em>extensive</em> property $S$, $V$, or
+            $\left\{N_i\right\}$ respectively. Provided all the relevant work
+            terms have been included, it has been observed that a thermodynamic
+            state is fully specified if <em>at least</em> one variable is
+            specified for each of the conjugate pairs considered.
+        </p>
+        <p>
+            The <em>natural variables</em> for a particular function are
+            whichever choices result in an exact differential relationship for
+            that function. For example, the internal energy has the natural
+            variables $U(S,\,V,\,\left\{N_i\right\}, \ldots)$. This is apparent
+            from Eq.\eqref{eq:fundamentalThermoRelation}, where these variables
+            are all exact differentials related to ${\rm d}U$. Unfortunately,
+            these variables are not particularly nice (and the internal energy
+            is not particularly interesting) as we cannot directly measure the
+            entropy or internal energy in experiments. There are other
+            thermodynamic potentials which have more convenient natural
+            variables and these can be derived by considering the consequences
+            of the second law of thermodynamics. These are all Legendre
+            transforms of the internal energy thus their natural variables will
+            always correspond to one variable from each conjugate pair.
+        </p>
+        <h2 id="second-law">Free-energies and thermodynamic potentials</h2>
+        <p>
+            The second law of thermodynamics has already been introduced via the
+            Clausius inequality and is formally written as follows,
+
+            \begin{align*}
+            {\rm d} S_{total} \ge 0,
+            \end{align*}
+
+            i.e., the total entropy of the universe (our system and its
+            surroundings) must always increase or remain constant. This
+            statement implies that the only "stationary" thermodynamic state is
+            where the entropy has reached its maximum, henceforth known as
+            the <em>equilibrium</em> state. The equilibrium state is of
+            particular interest as all thermodynamic systems approach it and, if
+            left undisturbed, remain there indefinitely.
+        </p>
+        <p>
+            It is often the basis of process calculations that a particular
+            thermodynamic system has reached equilibrium, thus determining
+            the equilibrium state (via a maximization of the total entropy) is
+            our primary goal. Starting from some initial non-equilibrium state,
+            some unconstrained internal parameters (e.g., composition, reaction
+            progression) are varied such that the total entropy is maximized.
+        </p>
+        <p>
+            Although the universe's entropy must be maximized at equilibrium,
+            our interest is in a smaller thermodynamic system contained within
+            it. The total entropy is the sum of the entropy of this system
+            within the universe and the rest of the universe, i.e.,
+
+            \begin{align*}
+            S_{total}&=S_{sys.}+S_{surr.}.
+            \end{align*}
+
+            It is clear that both $S_{sys.}$ and $S_{surr.}$ may increase or
+            decrease, provided the overall change results in an increase of
+            $S_{total}$.
+        </p>
+        <p>
+            It is henceforth assumed that the surroundings are at equilibrium,
+            they remain at equilibrium, and any interaction with the
+            surroundings is reversible. The author considers these the largest
+            assumptions they have ever made, both physically and in terms of
+            approximation; however, it is equivalent to a &ldquo;worst
+            case&rdquo; estimate for the generation of entropy. In this case,
+            there can be no &ldquo;external&rdquo; process driving changes
+            within the thermodynamic system. Anything that the system does must
+            happen &ldquo;spontaneously&rdquo;. In this case, the only possible
+            mechanism by which the universe's entropy may change is via heat
+            transfer from the system (and the heat flux becomes an exact differential).
+
+            \begin{align*}
+            {\rm d} S_{total}&={\rm d} S_{sys.}+{\rm d} S_{surr.}\\
+            &={\rm d} S_{sys.}+\frac{{\rm d} Q_{sys.\to surr.}}{T_{surr.}}\\
+            &={\rm d} S_{sys.}-\frac{{\rm d} Q_{surr.\to sys.}}{T_{surr.}}.
+            \end{align*}
+
+            This makes it clear that the entropy change of the system must be
+            balanced against the entropy it is generating in the surroundings
+            through heat transfer (the surroundings are also so large the other
+            effects of the heat transfer are negligble). Inserting the
+            fundamental thermodynamic equation
+            (Eq.\eqref{eq:fundamentalThermoRelation}),
+
+            \begin{align}
+            {\rm d} S_{total}&={\rm d} S_{sys.}-\frac{{\rm d}
+            U_{sys.} + p_{sys.}\,{\rm d}V_{sys.} - \sum_i^{N_C}
+            \mu_{i,sys}\,{\rm d} N_{i,sys.}}{T_{surr.}}.
+            \end{align}
+
+            To simplify the remainder of this section, the thermodynamic system
+            is now assumed to be <em>closed</em> which allows the elimination of
+            the chemical potential term,
+
+            \begin{align}\label{eq:totalentropy}
+            -T_{surr.}\,\left({\rm d} S_{total}\right)_{C}&={\rm d} U_{sys.} + p_{sys.}\,{\rm d}V_{sys.}-T_{surr.}\,{\rm
+            d}
+            S_{sys.}.
+            \end{align}
+
+            The subscript $C$ on the parenthesis is used to indicate that the
+            system is closed. This equation makes it clear that, in closed
+            systems interacting reversibly with its surroundings which are at
+            local equilibrium, the overall equilibrium is not solely linked to
+            the entropy of the system itself but is the <em>minimisation</em> of
+            the RHS of Eq.\eqref{eq:totalentropy} (due to the negative sign on
+            the entropy change). The RHS often corresponds to
+            some <em>thermodynamic potential</em> which arise under different
+            constraints and these are now derived in the sections below.
+        </p>
+        <div class="card">
+            <div class="card-header">Isolated system (closed system at constant volume and internal energy)</div>
+            <div class="card-body">
+                <p>
+                    Consider a system which is completely isolated from its
+                    surroundings. It cannot exchange heat
+                    $\left({\partial}Q=0\right)$ or work
+                    $\left({\partial}W=0\right)$. As we're in the zero-work
+                    reversible limit, the system must be at constant volume
+                    $\left({\rm d}V=0\right)$ and the molar amounts
+                    $\left\{N_i\right\}$ may individually vary but only such that
+                    $\left(\sum_i^{N_C} \mu_i\,{\rm d} N_{i,A}=0\right)$. Examining
+                    the original balance in Eq.\eqref{eq:initialebalance},
+
+
+                    \begin{align*}
+                    {\rm d} U = \cancelto{0}{\partial Q} - \cancelto{0}{\partial W} &= 0,
+                    \end{align*}
+
+                    thus it is clear that the isolated constraint is also equivalent
+                    to ${\rm d}V=0$ and ${\rm d}U=0$. Examining the total entropy
+                    under these constraints,
+
+                    \begin{align*}
+                    \left({\rm d} S_{total}\right)_{U,V,C}&={\rm d} S_{sys.}+\frac{\cancelto{0}{\partial Q_{sys.\to
+                    surr.}}}{T_{surr.}}\\
+                    &={\rm d} S_{sys.},
+                    \end{align*}
+
+                    where the subscripts on the brackets indicate that the $U$, $V$,
+                    are held constant in the closed system. It is clear from this
+                    expression (and our own intuition) that an isolated system, with
+                    surroundings already at equilibrium, all changes in the total
+                    entropy must arise from changes in the system entropy.
+                </p>
+                <p>
+                    To put this in terms of minimising a thermodynamic potential
+                    we define the negative of the entropy (sometimes
+                    called <em>negentropy</em>),
+
+                    \begin{align*}
+                    \left(f\right)_{U,V,C}=f_{U,V,C}=-S_{sys.}.
+                    \end{align*}
+
+                    To determine the equilibrium state the potential, $f_{U,V,C}$,
+                    must be minimised and this action is equivalent to maximising
+                    the total entropy.
+                </p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Closed systems under constant temperature and pressure</div>
+            <div class="card-body">
+                <p>
+                    Isolated systems are interesting in certain cases; however, in
+                    process engineering, we often have a closed system at a fixed
+                    temperature $T$ and pressure $p$. Under these conditions the
+                    system is free to transfer heat and change its volume. For the
+                    interaction of the system with its surroundings to be
+                    reversible, the surroundings must have the same temperature
+                    $T_{sys.}=T_{surr.}$ and pressure $p_{sys.}=p_{surr.}$.
+                </p>
+                <p>
+                    If we now define a new thermodynamic potential called the Gibbs
+                    free energy,
+
+                    \begin{align*}
+                    G = U + p\,V - T\,S,
+                    \end{align*}
+
+                    and look at changes in $G$ while holding $T$ and $p$ constant, we have,
+                    \begin{align*}
+                    \left({\rm d} G\right)_{T,p} = {\rm d} U +p\,{\rm d} V - T\,{\rm d} S
+                    \end{align*}
+
+                    Comparing with this expression against
+                    Eq.\eqref{eq:totalentropy} it is immediately apparent that,
+
+                    \begin{align*}
+                    \left({\rm d} S_{total}\right)_{T,p,C} &= -\left(\frac{{\rm d} G_{sys.}}{T_{sys.}}\right)_{T,p,C}.
+                    \end{align*}
+
+                    Thus, maximisation of $S_{total}$ is equivalent to minimisation
+                    of $G$ when $T$ and $p$ are held constant. Writing this in the
+                    same notation as before we have,
+
+                    \begin{align*}
+                    f_{T,p,C} = G_{sys.}.
+                    \end{align*}
+                </p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Closed systems under constant temperature and volume</div>
+            <div class="card-body">
+                <p>
+                    Again, reversibility requires that $T_{surr.}=T_{sys.}$. No
+                    pressure-volume work occurs as the volume is fixed and so the
+                    pressure of the surroundings is actually irrelevant. Material
+                    work is also ignored as the system is closed.
+
+                    \begin{align}
+                    \left({\rm d} S_{total}\right)_{T,V,C}&=-\frac{{\rm d} U_{sys.} + p_{sys.}\,\cancelto{0}{{\rm
+                    d}V_{sys.}}-T_{surr.}\,{\rm d} S_{sys.}}{T_{surr.}}
+                    =-\left(\frac{{\rm d}A}{T_{sys.}}\right)_{T,V,C}.
+                    \end{align}
+
+                    In the final equality, another thermodynamic
+                    potential is introduced: the Helmholtz free energy,
+
+                    \begin{align*}
+                    A &= U - T\,S.
+                    \end{align*}
+
+                    It is now clear that under these constraints the maximum total
+                    entropy is reached at the minimum Helmholtz free energy. I.e.,
+
+                    \begin{align*}
+                    f_{T,V,C} = A_{sys.}.
+                    \end{align*}
+                </p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Closed system under constant pressure and enthalpy</div>
+            <div class="card-body">
+                <p>
+                    The enthalpy is defined as follows,
+
+                    \begin{align*}
+                    H&=U+p\,V\\
+                    {\rm d} H &= {\rm d} U+ V\,{\rm d} p + p\,{\rm d} V.
+                    \end{align*}
+
+                    For constant pressure and enthalpy we have,
+
+                    \begin{align*}
+                    \left({\rm d} U + p\,{\rm d} V\right)_{H,p} = 0.
+                    \end{align*}
+
+                    Examining the total entropy under these constraints (Eq.\eqref{eq:totalentropy}),
+
+                    \begin{align}
+                    \left({\rm d} S_{total}\right)_{H,p,C}&=-\frac{\cancelto{0}{{\rm d} U_{sys.} + p_{sys.}\,{\rm
+                    d}V_{sys.}}-T_{surr.}\,{\rm d} S_{sys.}}{T_{surr.}}
+                    ={\rm d} S_{sys.}.
+                    \end{align}
+
+                    Even though the surroundings temperature is unknown, it is
+                    merely a scaling factor and again the maximisation of the
+                    total entropy is equivalent to the minimisation of the
+                    system's negentropy,
+
+                    \begin{align*}f_{H,p,C} = -S_{sys.}.\end{align*}
+                </p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Closed system under constant entropy and pressure</div>
+            <div class="card-body">
+                <p>
+                    Again, starting with the total entropy of a closed system, Eq.\eqref{eq:totalentropy},
+
+                    \begin{align}
+                    \left({\rm d} S_{total}\right)_{p,S,C}&=-\frac{{\rm d} U_{sys.} + p_{sys.}\,{\rm
+                    d}V_{sys.}-T_{surr.}\,\cancelto{0}{{\rm d} S_{sys.}}}{T_{surr.}}.
+                    \end{align}
+
+                    We note that,
+
+                    \begin{align*}
+                    \left({\rm d} H\right)_{p} &= {\rm d} U+ \cancelto{0}{V\,{\rm d} p} + p\,{\rm d} V
+                    \end{align*}
+
+                    Thus, we have
+
+                    \begin{align*}
+                    \left({\rm d} S_{total}\right)_{p,S,C} &= -\left(\frac{{\rm d}H}{T_{surr.}}\right)_{p,S,C}.
+                    \end{align*}
+
+                    The surroundings can be at some arbitrary constant temperature
+                    (they are at equilibrium and very large thus unaffected by heat
+                    transfer), thus $T_{surr.}$ is simply a scaling factor. The
+                    thermodynamic potential to minimise is then $f_{p,S,C} = H_{sys.}$.
+                </p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Closed system under constant entropy and volume</div>
+            <div class="card-body">
+                <p>
+                    Finally, the simplest example,
+
+                    \begin{align}
+                    \left({\rm d} S_{total}\right)_{p,S,C}&=-\frac{{\rm d} U_{sys.} + p_{sys.}\,\cancelto{0}{{\rm
+                    d}V_{sys.}}-T_{surr.}\,\cancelto{0}{{\rm d} S_{sys.}}}{T_{surr.}} = \frac{{\rm d}
+                    U_{sys.}}{T_{surr.}}.
+                    \end{align}
+
+                    Thus, the thermodynamic potential to minimise for maximum total
+                    entropy is $f_{S,V,C} = U_{sys.}$ and the surroundings
+                    temperature is unimportant.
+                </p>
+            </div>
+        </div>
+        <h3 id="summary">Summary</h3>
+
+        <p>
+            In summary, there are a number of relevant thermodynamic potentials
+            for a closed system. These are defined below,
+
+            \begin{align}
+            U&= T\,S - p\,V + \sum_i^{N_C}\mu_i\,N_i\label{eq:Urule}\\
+            H&= U + p\,V = T\,S + \sum_i^{N_C}\mu_i\,N_i\label{eq:Hrule}\\
+            A&= U - T\,S = - p\,V + \sum_i^{N_C}\mu_i\,N_i\label{eq:Arule}\\
+            G&= H - T\,S = \sum_i^{N_C}\mu_i\,N_i\label{eq:Grule}
+            \end{align}
+        </p>
+        <p>
+            For each set of constrained thermodynamic states in closed
+            systems, a particular thermodynamic potential is minimised at
+            equilibrium. These are summarised in the table below:
+        </p>
+        <table class="table table-striped table-hover mx-auto col-md-6">
+            <thead>
+                <tr>
+                    <th>Constants</th>
+                    <th>Function to minimise, $f$</th>
+                </tr>
+            </thead>
+            <tr>
+                <td>$p,\,S$</td>
+                <td>$H$</td>
+            </tr>
+            <tr>
+                <td>$p,\,T$</td>
+                <td>$G$</td>
+            </tr>
+            <tr>
+                <td>$p,\,H$</td>
+                <td>$-S$</td>
+            </tr>
+            <tr>
+                <td>$V,\,S$</td>
+                <td>$U$</td>
+            </tr>
+            <tr>
+                <td>$V,\,T$</td>
+                <td>$A$</td>
+            </tr>
+            <tr>
+                <td>$V,\,U$</td>
+                <td>$-S$</td>
+            </tr>
+        </table>
+        <p>
+            The variables held constant correspond to the "natural" variables of
+            each potential. Expressing the change in each thermodynamic
+            potential in terms of these natural variables yields the following
+            differential equations,
+
+            \begin{align}\label{eq:dU} {\rm d}U &= T\,{\rm d}S - p\,{\rm d}V +
+            \sum_i^{N_C}\mu_{i}\,{\rm d} N_{i}\\ -{\rm d}S &= -\frac{1}{T}{\rm
+            d}U - \frac{p}{T}{\rm d}V + \sum_i^{N_C}\frac{\mu_{i}}{T}\,{\rm d}
+            N_{i}\\ {\rm d}A &= -S\,{\rm d}T - p\,{\rm d}V +
+            \sum_i^{N_C}\mu_{i}\,{\rm d} N_{i}\label{eq:dA}\\ {\rm d}H &=
+            T\,{\rm d}S + V\,{\rm d}p + \sum_i^{N_C}\mu_{i}\,{\rm d} N_{i}\\
+            {\rm d}G &= -S\,{\rm d}T + V\,{\rm d}p + \sum_i^{N_C}\mu_{i}\,{\rm
+            d} N_{i}.\label{eq:dG} \end{align}
+
+            The significance of the chemical potential cannot be overstated. It
+            is the change of each thermodynamic potential per mole of each
+            species exchanged when the other natural variables of the potential
+            are held constant,
+
+            \begin{align}\label{eq:ChemPotDefinition} \mu_i =
+            -T\left(\frac{\partial S}{\partial N_i}\right)_{U,V,\left\{N_{j\neq
+            i}\right\}}= \left(\frac{\partial A}{\partial
+            N_i}\right)_{T,V,\left\{N_{j\neq i}\right\}} = \left(\frac{\partial
+            H}{\partial N_i}\right)_{S,p,\left\{N_{j\neq i}\right\}} =
+            \left(\frac{\partial G}{\partial N_i}\right)_{T,p,\left\{N_{j\neq
+            i}\right\}} \end{align}
+
+            The implication of this is that when dealing with systems exchanging
+            mass, but constrained by two "natural" variables, the chemical
+            potential for each species must be equal in all phases, regardless
+            of which constrained variables are actually used (otherwise a change
+            of mass between systems could change the value of the overall
+            thermodynamic potential implying it is not at a minimum). It is
+            also the partial molar Gibbs free energy ($G=\sum_i N_i\,\mu_i$) and
+            thus calculation of the Gibbs free energy can be reduced to
+            considering the chemical potential.
+        </p>
+    </div>
+
+
+    <div class="col-xl-10 m-auto bg-white">
+        <table class="text-center table table-striped table-hover col-md-4 float-md-right m-4">
+            <caption>The thermodynamic potential, $f$, to be minimised
+                depending on the variables chosen to be constant.</caption>
+            <thead>
+                <tr>
+                    <th>Constants</th>
+                    <th>Function to minimise, $f$</th>
+                </tr>
+            </thead>
+            <tr>
+                <td>$p,\,S$</td>
+                <td>$H$</td>
+            </tr>
+            <tr>
+                <td>$p,\,T$</td>
+                <td>$G$</td>
+            </tr>
+            <tr>
+                <td>$p,\,H$</td>
+                <td>$-S$</td>
+            </tr>
+            <tr>
+                <td>$V,\,S$</td>
+                <td>$U$</td>
+            </tr>
+            <tr>
+                <td>$V,\,T$</td>
+                <td>$A$</td>
+            </tr>
+            <tr>
+                <td>$V,\,U$</td>
+                <td>$-S$</td>
+            </tr>
+        </table>
+        <h1>Minimisation details</h1>
+        <p>
+            This section deals with the computational problem of implementing a
+            general thermodynamic potential minimiser. Unless you are doing
+            this, you probably want to skip this chapter and go straight to the <a href="#models">models</a>.
+        </p>
+        <p>
+            The <a href="#backgroundthermodynamics">previous section</a> established that
+            finding equilibrium means finding the minimum of a thermodynamic
+            potential, $f$. Which potential depends on which variables are held
+            constant (see the table). This section digs into the minimisation
+            itself to understand the approach, what thermodynamic properties are
+            needed to actually perform it, and any gotchas.
+        </p>
+        <h2 id="minimisation">Thermodynamic potential minimisation</h2>
+        <p>
+            To be as general as possible, we're going to consider a closed
+            system (our universe) containing $N_p$ thermodynamic
+            sub-systems. Each subsystem $\alpha$ is typically a different phase
+            with $N_{C,\,\alpha}$ components within it and is described by a
+            set of state variables
+            $\vec{X}_\alpha=\left\{\left\{N_{i,\alpha}\right\}^{N_{C,\,\alpha}},\,T_\alpha,\,p_\alpha\text{
+            or }\,V_\alpha\right\}$ where either the pressure $p_\alpha$ or the
+            volume $V_\alpha$ is used depending on the thermodynamic model of
+            the subsystem/phase. The state vector of our "universe" is then generated by
+            collecting all of these variables together, i.e.,
+            $\vec{X}=\left\{\vec{X}_\alpha\right\}^{N_P}$.
+        </p>
+        <p>
+            Our aim is to determine the equilibrium state, $\vec{X}_{equil.}$,
+            of the universe under some conditions. Mathematically the
+            minimisation can be expressed as follows,
+
+            \begin{align*}
+            f\left(\vec{X}_{equil.}\right)&=\min_{\vec{X}}\left(f\left(\vec{X}\right)\right)
+            & &\\ \vec{X} &\ge \vec{0} & &\\ g_k\left(\vec{X}\right) &= 0 &
+            k&\in[1,N_{constraints}], \end{align*}
+
+            Lets discuss each line in turn. The first line simply says the
+            equilibrium value of the potential is found at the minimium of the
+            potential. The second line is a non-negativity constraint to keep
+            the minimisation in a physical region, i.e.
+
+            \begin{align}\label{eq:nonNegConstraints}
+            \left\{\left\{N_{i,\alpha}\right\}^{N_{C,\,\alpha}},\,T_\alpha,p_\alpha\text{
+            or }\,V_\alpha\right\}^{N_P} &\ge 0, \end{align}
+
+            This is needed as without it the minimiser will dumbly react away
+            unstable compounds until their amounts turn negative, and keep going
+            as it continues to lower the thermodynamic potential, $f$.
+
+            Some other implementations must allow electron amounts to go
+            negative (i.e. to allow positive ions to form), but SimCem tracks
+            the total electron count in the system allowing a non-negative
+            constraint to be applied even in this case.
+
+            Finally, there are a number of additional <em>equality</em>
+            constraints which we write in general as follows,
+
+            \begin{align}
+            g_k\left(\vec{X}\right) &= 0,
+            \end{align}
+
+            where $k$ is the index of an equality constraint which holds some
+            function of the state variables, $g_k\left(\vec{X}\right)$, to a
+            value of zero. One example of these are the <i>material</i>
+            constraints arising from mass/mole balances (e.g. conservation of
+            elements) whereas the other constraints arise from constraints on
+            thermodynamic variables (e.g., constant enthalpy and
+            pressure). Before these are discussed, we review how constrained
+            minimisation is carried out in general to better understand how
+            these constraints are combined with the minimisation problem.
+        </p>
+        <h3 id="secLagrange">Lagrange multipliers</h3>
+        <p>
+            Computerised minimisation routines simply repeatedly change the
+            value of the state variable and track the state with the lowest
+            value of the thermodynamic potential. The only difference between
+            various algorithms is how intelligently the system selects the new
+            values of the state variables to try.
+
+            In this simple approach, its easy to implement the non-negativity
+            constraints on the state variables
+            (Eq.\eqref{eq:nonNegConstraints}).
+
+            Whenever the computer attempts to changes the state variables to
+            below zero it is prevented from doing so in a method called called
+            bounds checking. The equality constraints embodied by $g_k$ may be
+            highly non-linear and thus its not easy to immediately decide how to
+            make sure they are not violated; however, constrained minimisation
+            problems can be transformed into <em>unconstrained</em> searches for stationary
+            points using the method of Lagrange multipliers. To derive this
+            approach, a new function called the Lagrangian, $F$, is
+            constructed like so,
+
+            \begin{align*} F\left(\vec{X},\left\{\lambda_k\right\}\right) =
+            f\left(\vec{X}\right) + \sum_k \lambda_k\,g_k\left(\vec{X}\right),
+            \end{align*}
+
+            where $\lambda_k$ is an as-yet unknown constant called the
+            Lagrange multiplier for the $k$th equality constraint. The Lagrangian has the unique property that
+            the constrained minima's of $f$ now occur at the (unconstrained) <em>extrema</em> of $F$. For example, it is
+            easy to
+            see that the derivatives of $F$ with respect to each Lagrange
+            multiplier are zero if the constraints are satisfied,
+
+            \begin{align}\label{eq:constraintResult}
+            \frac{\partial F}{\partial \lambda_k} = g_k &= 0 & \text{if constraints are satisfied}.
+            \end{align}
+
+            Thus we are searching for a point where $\partial F/\partial
+            \lambda_k=0$ to ensure the constraints are satisfied. Taking a
+            derivative of the Lagrangian with respect to the state variables,
+            $\vec{X}$, yields the following,
+
+            \begin{align*}
+            \frac{\partial F}{\partial \vec{X}} = \frac{\partial f}{\partial \vec{X}} + \sum_k \lambda_k \frac{\partial
+            c_k}{\partial \vec{X}},
+            \end{align*}
+
+            or in vector notation,
+
+            \begin{align*}
+            \nabla_\vec{X}\,F &= \nabla_\vec{X}\,f + \sum_k \lambda_k \nabla_\vec{X}\,c_k
+            \end{align*}
+
+            Lets consider when $\partial F/\partial
+            \vec{X}=\nabla_\vec{X}\,F=\vec{0}$, at this point the following must be
+            true,
+
+            \begin{align}\label{eq:lagrangianResult}
+            \nabla_\vec{X}\,f = - \sum_k \lambda_k \nabla_\vec{X}\,c_k.
+            \end{align}
+
+            This makes it clear that at the point where $\partial F/\partial
+            \vec{X}=\vec{0}$, the downhill direction of $f$ can be decomposed into
+            directions where the constraint functions also change
+            ($\nabla_\vec{X}\,c_k$ are basis vectors of $\nabla_\vec{X}\,f$, and
+            $-\lambda_k$ are the coordinate values in this basis). Thus,
+            attempting to lower $f$ any further will cause the constraint values
+            to alter away from zero if they are already satisfied at this point
+            (as guaranteed by $\frac{\partial F}{\partial \lambda_k}=0$).
+        </p>
+        <p>
+            As a result, the new strategy to find equilibrium is to find a
+            stationary point of the Lagrangian,
+
+            \begin{align}\label{eq:stationaryPoint} \frac{\partial F}{\partial
+            \vec{X}} &= 0 & \frac{\partial F}{\partial \left\{\lambda_k\right\}}
+            &=g_k(\vec{X})=0. \end{align}
+
+            This is a stationary point and not a maximum or minimum as no
+            statements on the second derivatives of the Lagrangian have been
+            made. In fact, most stationary points of the Lagrangian turn out to
+            be saddle points therefore minimisation of the Lagrangian is not a
+            suitable approach and instead a root search for the first derivative
+            of the Lagrangian should be attempted. Even this approach may
+            converge to a stationary point of $F$ which is not a minimum but a
+            maximisation of $f$. Implementation of a suitable routine is
+            therefore an art but fortunately general algorithms are available
+            which perform this analysis, such as NLopt, Opt++, and SLSQP. Most
+            of these packages have challenges to use with non-linear constrained
+            problems like this but
+            <a href="https://github.com/coin-or/Ipopt">IPOPT</a>, when
+            correctly scaled, appears to be the most robust (and free)
+            approach and is what is used by default in SimCem. Global
+            minimisation is not yet considered.
+        </p>
+        <p>
+            The purpose of introducing the Lagrangian is to demonstrate that
+            derivatives of $f$ and $g_k$ are needed, but also to introduce the
+            Lagrangian multipliers $\lambda_k$, which will later be shown to
+            correspond to physical properties of the system. We will summarise
+            the values that must be calculated before discussing how to
+            calculate these values.
+        </p>
+        <h3 id="props-needed-for-minimisation">Required properties for minimisation</h3>
+        <p>
+            To determine the extreema of the Lagrangian we need to numerically
+            calculate the terms above. As a root find in the derivatives of the
+            Lagrangian is to be attempted, numerical expressions for the
+            derivatives of the lagrangian are required,
+
+            \begin{align} \frac{\partial F}{\partial \left\{\lambda_k\right\}}
+            &=\left\{g_k(\vec{X})\right\} & \frac{\partial F}{\partial \vec{X}}
+            &= \frac{\partial f}{\partial \vec{X}} + \sum_k
+            \lambda_k\frac{\partial g_k}{\partial \vec{X}}. \end{align}
+
+            As illustrated above, the derivatives with respect to the lagrangian
+            multipliers are given by the constraint functions themselves, thus
+            no additional calculation is required there if these are
+            defined. The thermodynamic potential, $f$, of the overall system can
+            be broken down into the contribution from each subsystem/phase (this
+            is implicitly ignoring any contribution from the interfaces between
+            the subsystems/phases),
+
+            \begin{align}\label{eq:} f = \sum_{\alpha}^{N_p} f_\alpha,
+            \end{align}
+
+            where $f_\alpha$ is the contribution arising from a single phase,
+            $\alpha$. This allows us to rewrite the derivative of the Lagrangian
+            with respect to the state variables as follows,
+
+            \begin{align}\label{eq:Fderiv} \frac{\partial F}{\partial \vec{X}}
+            &= \sum_\alpha^{N_P} \frac{\partial f_\alpha}{\partial \vec{X}} +
+            \sum_k \lambda_k\frac{\partial g_k}{\partial \vec{X}} \end{align}
+
+            It should be noted that each subsystem/phase only depends on its state variables,
+
+            \begin{align*} \frac{\partial f_\alpha}{\partial \vec{X}_\beta} &= 0
+            & \text{for $\alpha \neq\beta$}. \end{align*}
+
+            Thus, each individual phase's derivatives can be considered
+            separately as only the $\partial f_\alpha/\partial \vec{X}_\alpha$
+            terms are nonzero. To make more progress we need to understand what
+            the variables $\vec{X}_\beta$ are, and this will be discussed in the <a href="#models">models</a>
+            section. To
+            understand what derivatives are needed from the equality
+            constraints these are explored now.
+        </p>
+        <h2 id="minimisationconstraints">Minimisation equality constraints</h2>
+        <p>
+            The <a href="https://en.wikipedia.org/wiki/Phase_rule">Gibbs phase
+                rule</a> states that the number of independent intensive variables
+            (AKA degrees of freedom), $F$, required to completely specify the
+            equilibrium state of a thermodynamic system is,
+
+            \begin{align}
+            F=C+2-N_P,
+            \end{align}
+
+            where $N_P$ is the number of phases and $C$ is the number of
+            independent components in the system. It should be noted that in
+            general $C\neq N_C$, as components may be linked by the constraints
+            of elemental or molecular balances.
+        </p>
+        <p>
+            In SimCem, $\sum_\alpha^{N_P}\left(N_{C,\alpha}+2\right)$ state
+            variables are always used to describe a system (there are
+            $N_{C,\alpha}$ molar amounts
+            $\left\{N_{i,\alpha}\right\}^{N_{C,\alpha}}$, the subsystem
+            temperature $T_\alpha$, and either the subsystem pressure $p_\alpha$
+            or volume $V_\alpha$ for each subsystem). In general,
+            $\sum_\alpha^{N_P}\left(N_{C,\alpha}+2\right)\ge C+2-N_P$, thus the
+            state of a multi-phase and/or reactive system, $\vec{X}$, is
+            typically over specified and constraints must exist between the
+            variables minimisation to eliminate the redundant degrees of
+            freedom.
+        </p>
+        <h3 id="constraints_on_T_p_V">Constraints on $S,\,H,\,U,\text{ or }T$ and $p\text{ or } V$</h3>
+        <p>
+            Two systems in equilibrium must have equal temperature, pressure,
+            and chemical potential. These constraints will arise naturally from
+            the minimisation; however, it is efficient to remove any variables
+            of the minimisation wherever we can (and also helps with numerical
+            accuracy/stability).
+        </p>
+        <p>
+            As the temperatures of all phases are equal at equilibrium and all
+            models used in SimCem have a temperature variable,
+            $\left\{T_\alpha\right\}^{N_{p}}$, these individual values are
+            eliminated from $\vec{X}$ and set equal to a single system
+            temperature, $T$, which is inserted into $\vec{X}$.
+        </p>
+        <p>
+            If a constant temperature is being considered, then the system
+            temperature, $T$, is simply set to the constrained value and
+            eliminated from $\vec{X}$ entirely. If temperature is free, then a
+            constraint on $S$, $H$, or $U$ is added, i.e.,
+
+            \begin{align}
+            g_{S}\left(\vec{X}\right) = S- S_{target} = 0.
+            \end{align}
+        </p>
+        <p>
+            Not all models used in SimCem have a pressure variable, thus it is a
+            little more challenging to reduce it to a single value in $\vec{X}$,
+            so this is not done (yet); however, if constant pressure is
+            required, then the pressure of the first phase is constrained only
+            and the other phases then equilibrate to this pressure via the
+            minimisation,
+
+            \begin{align}
+            g_{p}\left(\vec{X}\right) = p_1- p_{target} = 0.
+            \end{align}
+
+            If the volume is held constant then a different constraint function
+            is used,
+
+            \begin{align}
+            g_{V}\left(\vec{X}\right) = \sum_\alpha^{N_p} V_\alpha- V_{target} = 0.
+            \end{align}
+
+            Any phase volumes appearing as independent variables must remain in
+            $\vec{X}$ as it is the overall volume of the system which is
+            constrained to $V_{target}$, thus individual phases themselves have
+            unconstrained volumes.
+        </p>
+        <h3>Constraints on elements/species</h3>
+        <p>
+            SimCem has a reactive and non-reactive mode which selects between
+            the conservation of elements or species respectively. For example,
+            consider the water/steam equilibrium system,
+
+            \begin{align*}
+            H_2O_{steam} &\rightleftharpoons H_2O_{water}
+            \end{align*}
+
+            The variables for this system in SimCem are typically as follows,
+
+            \begin{align*}
+            \vec{X} = \left\{T,\,p,\,N_{H_2O,steam},\,N_{H_2O,water}\right\}.
+            \end{align*}
+
+            H<sub>2</sub>O may be present in both the steam and water phase, but
+            the total amount is constrained to the initial amount,
+            $N_{H_2O}^0$. Thus we'd like to add a <b>non-reactive</b> species
+            constraint,
+
+            \begin{align*}
+            g_{H_2O}\left(\vec{X}\right) = N_{H_2O,steam}+N_{H_2O,water} - N_{H_2O}^0 = 0;
+            \end{align*}
+
+            In <b>reactive</b> systems, the types of molecules are no-longer
+            conserved but the elements are. For example, consider the combustion
+            of graphite,
+
+            \begin{align*}
+            C+O_2&\leftrightharpoons CO_2\\
+            C+\frac{1}{2}O_2&\leftrightharpoons CO.
+            \end{align*}
+
+            The state variables are,
+
+            \begin{align*}
+            \vec{X} = \left\{T,\,p,\,N_{C,graphite},\,N_{O_2,gas},\,N_{CO,gas},\,N_{CO_2,gas}\right\}.
+            \end{align*}
+
+            Selecting a <b>reactive</b> system, SimCem will generate elemental
+            constraints,
+
+            \begin{align*}
+            g_{C}\left(\vec{X}\right) &= N_{C,solid}+N_{CO,gas}+N_{CO_2,gas}-N_{C}^0 = 0\\
+            g_{O}\left(\vec{X}\right) &= 2\,N_{O_2,gas}+N_{CO,gas}+2\,N_{CO_2,gas}-N_{O}^0 = 0.
+            \end{align*}
+
+            Elemental constraints allow any and all possible
+            reactions/rearrangements of elements to minimise the free
+            energy. For example, the following reaction is also allowed by these
+            constraints,
+
+            \begin{align*}
+            CO+\frac{1}{2}O_2&\leftrightharpoons CO_2
+            \end{align*}
+
+            Sometimes this is not desired, and only specific reaction paths are
+            fast enough to be considered (e.g. in catalysed reactions). In this
+            case, custom constraints will need to be implemented. At the moment,
+            Simcem will only automatically generate elemental and
+            molecular constraints.
+        </p>
+        <h3 id="redundantconstraints">Eliminating redundant constraints</h3>
+        <p>
+            Consider the water-steam system again. Imagine that a user selects
+            this as a <b>reactive</b> system. SimCem will attempt to use a
+            hydrogen and oxygen balance constraint:
+
+            \begin{align*}
+            g_{H}\left(\vec{X}\right) = 2\,N_{H_2O,steam}+2\,N_{H_2O,water} - 2\,N_{H_2O}^0 = 0
+            \\
+            g_{O}\left(\vec{X}\right) = N_{H_2O,steam}+N_{H_2O,water} - N_{H_2O}^0 = 0
+            \end{align*}
+
+            These two constraints are identical aside from a multiplicative
+            factor. This leads to ambiguity in the values of the lagrange
+            multipliers as either constraint can apply and this indeterminacy
+            can cause issues with solvers, so we need to eliminate them.
+        </p>
+        <p>
+            Both elemental and species constraints are linear functions of the
+            molar amounts, $N_i$, thus they can be expressed in matrix form,
+
+            \begin{align}\label{eq:genMolConstraint}
+            \vec{g} = \vec{C}\cdot\left(\vec{N} - \vec{N}^0\right) =0
+            \end{align}
+
+            where $\vec{C}$ is a matrix where each row has an entry for the
+            amount of either an element or molecule represented by a particular
+            molar amount and $\vec{N}^0$ is the initial molar amounts.
+        </p>
+        <p>
+            To determine which rows of the matrix $\vec{C}$ are redundant, we
+            perform singular-value decomposition on the matrix
+            $\vec{C}=\vec{U}\,\vec{S}\,\vec{V}^T$. The benefit of this is the
+            rows of $V^T$ corresponding to the non-zero singular values form a
+            set of orthagonal constraints equivalent to the original constraint
+            matrix $\vec{C}$, so we use the so-called "thin" $\vec{V}^{T}$ (only
+            containing the non-zero singular rows) as our new constraint
+            matrix. As we would like to extract the original lagrangian
+            multipliers for later calculations, we need to be able to map back
+            and forth between the original and reduced lagrangians. This mapping
+            can be found by considering the original constraint and its
+            lagrangians,
+
+            \begin{align}
+            \vec{\lambda}\cdot\vec{g} &= \vec{\lambda} \cdot \vec{C} \left(\vec{N} - \vec{N}^0\right)
+            \\
+            &= \vec{\lambda} \cdot \vec{U}\,\vec{S}\,\vec{V}^T \left(\vec{N} - \vec{N}^0\right)
+            \\
+            &= \vec{\lambda_r} \cdot \vec{V}^T \left(\vec{N} - \vec{N}^0\right)
+            \end{align}
+
+            where the final line implicitly defines the reduced set of lagrange
+            multipliers $\vec{\lambda}_r$. Performing the minimisation using
+            $\vec{V}^T$, we can then recover the original lagrange multipliers like so,
+
+            \begin{align}
+            \vec{\lambda} &= \vec{U}^T\,\vec{S}^{-1}\cdot\vec{\lambda_r}
+            \end{align}
+
+            As a side note, the matrices $\vec{U}$ and $\vec{T}$ are
+            orthonormal/rotation matrices thus the tranpose is their
+            inverse. Also, as the diagonal matrix $\vec{S}$ is singular,
+            $\vec{S}^{-1}$ is the generalised inverse (i.e., only the non-zero
+            diagonal values are inverted).
+        </p>
+        <p>
+            With the constraints outlined, the actual definition of
+            thermodynamic models and the calculations may begin.
+        </p>
+        <h3>Derivatives required for constraints</h3>
+        <p>
+            For the constraint functions, the only non-zero
+            derivative of the element/molecular constraint function given in
+            Eq.\eqref{eq:genMolConstraint} is as follows,
+
+            \begin{align}
+            \frac{\partial g_{N_k}}{\partial N_i} &= C_{ik}
+            &
+            \frac{\partial g_{N_k}}{\partial \left\{p,T,V_\alpha\right\}} &= 0
+            \end{align}
+
+            \begin{align}\label{eq:GradEqsStart}
+            \frac{\partial g_{p_\alpha}}{\partial N_i} &= \begin{cases}
+            0 & \text{if $N_i\notin \vec{X}_\alpha$ or $V_\alpha\notin\vec{X}_\alpha$}
+            \\
+            \left(\frac{\partial p_\alpha}{\partial N_i}\right)_{V_\alpha,T,N_{j\neq i}} & \text{if $N_i\in
+            \vec{X}_\alpha$ and $V_\alpha\in\vec{X}_\alpha$}
+            \end{cases}
+            \\
+            \frac{\partial g_{p_\alpha}}{\partial \left\{p,T,V_\alpha\right\}} &= \left\{-1, \left(\frac{\partial
+            p_\alpha}{\partial T}\right)_{N_i,V_\alpha},\left(\frac{\partial p_\alpha}{\partial
+            V_\alpha}\right)_{N_i,T}\right\}
+            \\
+            \frac{\partial g_{V}}{\partial N_i} &= \left(\frac{\partial V}{\partial N_i}\right)_{\vec{X}\setminus
+            \left\{N_i\right\}}
+            \\
+            \label{eq:GradEqsEnd}
+            \frac{\partial g_{V}}{\partial \left\{p,T,V_\alpha\right\}} &= \left\{\left(\frac{\partial V}{\partial
+            p}\right)_{\vec{X}\setminus \left\{p\right\}}, \left(\frac{\partial V}{\partial T}\right)_{\vec{X}\setminus
+            \left\{T\right\}}, 1\right\}
+            \end{align}
+        </p>
+
+    </div>
+
+
+    <div class="col-xl-10 m-auto bg-white">
+        <h1>Thermodynamic models </h1>
+        <p>
+            Now that our fundamental thermodynamics is
+            refreshed and we understand that the <a href="#minimisation">minimisation</a> needs
+            a lot of thermodynamic derivatives, we're ready to develop
+            consistent thermodynamic models to generate those derivatives.
+        </p>
+        <h2 id="generatingfunctions">Generating functions and thermodynamic consistency</h2>
+        <p>
+            The thermodynamic potentials, when expressed as a function of their
+            natural variables, provide a complete description of the state of a
+            thermodynamic system. For example, consider the Gibbs free energy
+            expressed in terms of its natural variables
+            $G\left(T,\,p,\,\left\{N_i\right\}\right)$. If we know the values of
+            the natural variables, we can calculate $G$. From the <a href="#backgroundthermodynamics">fundamental thermodynamics</a>
+            section we know the derivatives of $G$ are related as follows,
+
+            \begin{align} {\rm d}G &= -S\,{\rm d}T + V\,{\rm d}p +
+            \sum_i^{N_C}\mu_{i}\,{\rm d} N_{i}. \end{align}
+
+            This implies that the derivatives of G in its natural variables are
+            directly other thermodynamic state variables,
+
+            \begin{align} \left(\frac{\partial G}{\partial
+            T}\right)_{p,\left\{N_i\right\}} &= -S & \left(\frac{\partial
+            G}{\partial p}\right)_{T,\left\{N_i\right\}} &= V &
+            \left(\frac{\partial G}{\partial N_i}\right)_{T,p,\left\{N_{j\neq
+            i}\right\}} &= \mu_i \end{align}
+
+            From here we can derive all other thermodynamic potentials, for
+            example,
+
+            \begin{align} H &= G - T\,S & U &= H - p\,V & A &= G - p\,V.
+            \end{align}
+
+            We can take further derivatives in the natural variables to evaluate
+            properties such as the heat capacity $C_p = \left(\partial
+            H/\partial T\right)_{p,\left\{N_i\right\}}$. In this way, every
+            interesting thermodynamic property can be created by only specifying
+            the functional form of $G(T,\,p,\,\left\{N_i\right\})$ and then
+            taking derivatives. This is known as a <a
+                href="https://en.wikipedia.org/wiki/Generating_function">generating function approach</a>,
+            and this can be applied to any thermodynamic potential in its
+            natural variables. Most commonly either the Gibbs or Helmholtz
+            $A(T,\,V,\,\left\{N_i\right\})$ free energies are used as generating
+            functions due to the convenience of their natural variables.
+        </p>
+        <div class="card">
+            <div class="card-header">Enthalpy directly generated from the Gibbs free energy</div>
+            <div class="card-body">
+                <p>
+                    It is sometimes convenient to generate enthalpy rather than
+                    entropy from the Gibbs free energy. Consider a reversible
+                    process in a closed system,
+
+                    \begin{align*}
+                    {\rm d} \left(\frac{G}{T}\right) &= \frac{1}{T} {\rm d} G - \frac{G}{T^2}{\rm d}T\\
+                    &= \frac{1}{T} {\rm d} G - \frac{H-TS}{T^2}{\rm d}T\\
+                    &= \frac{1}{T} \left({\rm d} G + S{\rm d}T\right) - \frac{H}{T^2}{\rm d}T\\
+                    &= \frac{V}{T} {\rm d}p - \frac{H}{T^2}{\rm d}T.
+                    \end{align*}
+
+                    This illustrates that the volume and enthalpy can also be
+                    directly obtained from the functional form of $G(T,p)/\,T$, by
+                    taking derivatives in its natural variables (while holding the
+                    other natural state variables, including $N_i$, constant).
+                </p>
+            </div>
+        </div>
+        <p>
+            Specifying the entire thermodynamic system using a single
+            thermodynamic potential guarantees <em>thermodynamic consistency</em>. This
+            is the requirement that all properties are correctly related via
+            their derivatives as required by the laws of thermodynamics. This
+            may be accidentally violated if the system is specified another way,
+            i.e., via any of the derivatives. The most common way thermodynamic
+            consistency was violated in the past was to combine polynomial
+            functions for heat capacity and density which cannot be integrated
+            into a consistent thermodynamic potential.
+        </p>
+        <h2 id="simplifyingrelationships">Simplifying relationships for thermodynamic derivatives</h2>
+        <p>
+            A large number of thermodynamic derivatives are required to
+            implement the minimisation. This section presents a number of useful
+            expressions and approaches which allow us to interrelate various
+            derivatives to reduce the number which must be implemented to a
+            minimal amount.
+        </p>
+        <p>
+            First, <a href="#PartialMolarProperties">generalised partial
+                properties</a> are introduced to demonstrate that all extensive
+            properties can be expressed in terms of their derivatives in their
+            extensive variables. The <a href="#BridgmanTables">Bridgman
+                tables</a> provide a convenient method of expressing any
+            derivative of the thermodynamic potentials or their variables in
+            terms of just three "material derivatives". A
+            "generalised" <a href="#tripleproductrule">product rule</a> is then
+            introduced to demonstrate how derivatives may be interchanged,
+            particularly for the triple product rule. Finally, a key
+            relationship between the <a href="partial-molar-to-volar">partial
+                molar and partial "volar" properties</a> is derived.
+        </p>
+        <h3 id="PartialMolarProperties">Partial properties</h3>
+        <p>
+            As demonstrated in the section on <a href="#UEuler">solution for the
+                internal energy</a>, functions which are first-order homogeneous in
+            their variables can be immediately expressed in terms of these
+            derivatives. This is useful as it provided a relationship between
+            the internal energy and the other thermodynamic potentials; however,
+            a generalised rule would eliminate the need to generate expressions
+            for thermodynamic properties IF their derivatives are available.
+        </p>
+        <p>
+            Unfortunately, the two variable sets considered here contain both
+            homogeneous first-order ($\left\{N_i\right\}$, $V$) and
+            inhomogeneous ($T$, $p$) variables. In this case, Euler's method
+            does not extend to expressions which are functions of both; However,
+            a similar solution can be derived for these expressions provided the
+            inhomogeneous variables are restricted to intensive
+            properties <em>and</em> the extensive variables together uniquely
+            specify the total size of the system.
+        </p>
+        <p>
+            The derivation presented here is a generalisation of the proof for
+            partial <em>molar</em> properties which you can find in any
+            thermodynamic text (e.g., Smith, van Ness, and Abbott, Sec.11.2, 7th
+            Ed). Consider an extensive thermodynamic property, $M$, which is a
+            function of extensive $\left\{X_i\right\}$ and intensive
+            $\left\{y_i\right\}$ variables. The total differential is as
+            follows,
+
+            \begin{align}
+            {\rm d} M =
+            \sum_i \left(\frac{\partial M}{\partial X_i}\right)_{\left\{X_{i\neq j}\right\},\left\{y_{k}\right\}} {\rm
+            d}X_i
+            +\sum_i \left(\frac{\partial M}{\partial y_i}\right)_{\left\{X_{k}\right\},\left\{y_{j\neq i}\right\}} {\rm
+            d}y_i.
+            \end{align}
+
+            The extensive property $M$ can be converted to a corresponding
+            intensive property, $m$, by dividing by the system amount, i.e.,
+            $M=m\,N$. If the extensive properties are held constant and <em>
+                they are sufficient to determine the total system amount</em>, $N$,
+            then the system size, $N$, is also constant and may be factored out
+            of $M$ in the intensive partial differential terms.
+
+            \begin{align}
+            {\rm d} M =
+            \sum_i \left(\frac{\partial M}{\partial X_i}\right)_{\left\{X_{i\neq j}\right\},\left\{y_{k}\right\}} {\rm
+            d}X_i
+            +N \sum_i \left(\frac{\partial m}{\partial y_i}\right)_{\left\{X_{k}\right\},\left\{y_{j\neq i}\right\}}
+            {\rm d}y_i.
+            \end{align}
+
+            In addition, ${\rm d} M={\rm d} (N\,m) = m\,{\rm d} N+N\,{\rm
+            d}m$ and ${\rm d} X_i={\rm d} (N\,x_i) = x_i\,{\rm d} N+N\,{\rm
+            d}x_i$. Inserting these and factoring out the terms in $N$ and
+            ${\rm d}N$ yields,
+
+            \begin{align}\label{eq:pmolarintermediate}
+            \left(m - \sum_i \left(\frac{\partial M}{\partial X_i}\right)_{\left\{X_{i\neq
+            j}\right\},\left\{y_{k}\right\}} x_i\right){\rm d} N
+            + N\left({\rm d}m - \sum_i \left(\frac{\partial M}{\partial X_i}\right)_{\left\{X_{i\neq
+            j}\right\},\left\{y_{k}\right\}} {\rm d}x_i - \sum_i \left(\frac{\partial m}{\partial
+            y_i}\right)_{\left\{X_{k}\right\},\left\{y_{j\neq i}\right\}} {\rm d}y_i\right) =
+            0.
+            \end{align}
+
+            As ${\rm d}N$ and $N$ can vary independently this equation is only
+            satisfied if the terms in parenthesis are each zero. Multiplying the
+            first term in parenthesis by $N$ and setting it equal to zero yields
+            the required identity,
+
+            \begin{align}\label{eq:partialProperty}
+            M = \sum_i \bar{\bar{m}}_i\,X_i.
+            \end{align}
+
+            where $\bar{\bar{m}}_i=\left(\partial M/\partial
+            X_i\right)_{\left\{X_{i\neq j}\right\},\left\{y_{k}\right\}}$ is a
+            partial property.
+
+            This is a generalised solution for an extensive property in terms of
+            its partial properties which are its derivatives in its extensive
+            variables and is the primary objective of our derivation; however,
+            an additional important equation for the partial properties can be
+            easily obtained. The derivative of Eq.\eqref{eq:partialProperty}
+            (first divided by $N$) is,
+
+            \begin{align}
+            {\rm d}m = \sum_i x_i\,{\rm d}\bar{\bar{m}}_i + \sum_i \bar{\bar{m}}_i\,{\rm d}x_i.
+            \end{align}
+
+            This can be used to eliminate ${\rm d}m$ from the right term of
+            Eq.\eqref{eq:pmolarintermediate} which is also set equal to zero
+            (and multiplied by N) to give,
+
+            \begin{align}\label{eq:GibbsDuhem}
+            \sum_i X_i\,{\rm d}\bar{\bar{m}}_i
+            - \sum_i \left(\frac{\partial M}{\partial y_i}\right)_{\left\{X_{k}\right\},\left\{y_{j\neq i}\right\}} {\rm
+            d}y_i = 0.
+            \end{align}
+
+            This is the generalised <b>Gibbs/Duhem</b> equation which
+            interrelates the intensive properties of the system to the partial
+            properties.
+        </p>
+        <p>
+            The most well known applications of Eqs.\eqref{eq:partialProperty}
+            and \eqref{eq:GibbsDuhem} are for the partial <em>molar</em>
+            properties when $p$, $T$, and $\left\{N_i\right\}$ are the state
+            variables. In this case Eq.\eqref{eq:partialProperty} is
+
+            \begin{align}\label{eq:partialMolarProperty}
+            M = \sum_i \bar{m}_i\,X_i.
+            \end{align}
+
+            where $\bar{m}_i=\left(\partial M/\partial
+            N_i\right)_{p,T,\left\{N_{j\neq i}\right\}}$ is the partial molar
+            property. The most important partial molar property is the chemical
+            potential,
+
+            \begin{align*}
+            \mu_i = \bar{g}_i = \left(\frac{\partial G}{\partial N_i}\right)_{T,p,\left\{N_{j\neq i}\right\}},
+            \end{align*}
+
+            and it has already been proven that
+            Eq.\eqref{eq:partialMolarProperty} applies in this case, i.e.,
+            Eq.\eqref{eq:Grule} gives $G=\sum_iN_i\,\mu_i$. The corresponding
+            Gibbs-Duhem equation for the chemical potential in
+            $T,p,\left\{N_i\right\}$ is the most well-known form,
+
+            \begin{align}\label{eq:GibbsDuhemTpMu}\nonumber
+            \sum_i N_i\,{\rm d}\mu_i
+            - \left(\frac{\partial G}{\partial T}\right)_{p,\left\{N_i\right\}} {\rm d}T
+            - \left(\frac{\partial G}{\partial p}\right)_{T,\left\{N_i\right\}} {\rm d}p
+            \\
+            = \sum_i N_i\,{\rm d}\mu_i
+            + S\,{\rm d}T
+            - V\,{\rm d}p
+            = 0.
+            \end{align}
+        </p>
+        <p>
+            As derivatives are distributive, and $T$ and $p$ are held constant,
+            the partial molar properties for the thermodynamic potentials
+            satisfy similar relationships as the original potentials
+            (Eqs.\eqref{eq:Urule}-\eqref{eq:Grule}).
+
+            \begin{align}\label{eq:partialmolarrelationstart}
+            \mu_i&= \bar{h}_i - T\,\bar{s}_i\\
+            \bar{h}_i&= \bar{u}_i + p\,\bar{v}_i\\
+            \bar{a}_i&= \bar{u}_i - T\,\bar{s}_i\\
+            \bar{u}_i&= T\,\bar{s}_i - p\,\bar{v}_i + \mu_i
+            \label{eq:partialmolarrelationend}
+            \end{align}
+
+            Thus, the partial molar properties not only provide a derivative in
+            the molar amounts, but also completely describe all thermodynamic
+            potentials and many extensive quantities (such as $V$). Simcem
+            therefore only requires the implementation of expressions for three
+            partial molar amounts ($\mu_i$, $\bar{v}_i$, $\bar{h}_i$) to specify
+            all the thermodynamic potentials and their first derivative in the
+            molar amounts for the $\left\{T,p,\left\{N_i\right\}\right\}$
+            variable set.
+        </p>
+        <p>
+            For the $\left\{T,V,\left\{N_i\right\}\right\}$ variable set,
+            Eq.\eqref{eq:partialProperty} is,
+
+            \begin{align}\label{eq:partialVolarProperty}
+            M = \sum_i \breve{m}_i\, N_i + \left(\frac{\partial M}{\partial V}\right)_{T,\left\{N_{i}\right\}}\,V
+            \end{align}
+
+            where $\breve{m}_i = \left(\partial M/\partial
+            N_i\right)_{T,V,\left\{N_{j\neq i}\right\}}$ is deemed here to be a
+            partial "volar" quantity. A more useful form of this expression is
+            Eq.\eqref{eq:molartovolarproperty} which is derived in the later section on
+            the <a href="#partial-molar-to-volar">transformation between
+                $\bar{m}_i$ and $\breve{m}_i$</a>.
+        </p>
+        <h3 id="BridgmanTables">Material properties (Bridgman tables)</h3>
+        <p>
+            There are a number of interesting properties which are derivatives
+            of the thermodynamic potentials. For example, consider the isobaric
+            heat capacity,
+
+            \begin{align*}
+            C_p = \left(\frac{\partial H}{\partial T}\right)_{p} = -T \left(\frac{\partial^2 G}{\partial T^2}\right)_{p}
+            \end{align*}
+        </p>
+        <p>
+            Using partial molar properties allows us to illustrate a
+            complication in the calculation of these material properties for
+            multi-phases/sub-systems. For example, expressing the (extensive)
+            heat capacity in terms of the partial molar (AKA specific) heat
+            capacity using Eq.\eqref{eq:partialMolarProperty} yields the following expression,
+
+            \begin{align}\label{eq:mixCp}
+            C_p = \left(\frac{\partial H}{\partial T}\right)_{p}= \left(\frac{\partial}{\partial T} \sum_{i} N_{i}\,
+            \bar{h}_i\right)_{p} = \sum_i\left[\bar{h}_i\left(\frac{\partial N_i}{\partial T}\right)_{p} +N_i\,
+            \bar{c}_{p,i}\right]
+            \end{align}
+
+            where $\bar{c}_{p,i}=\left(\partial \bar{h}_i/\partial T\right)_{p}$ is
+            the partial molar isobaric heat capacity. The term on the LHS of
+            Eq.\eqref{eq:mixCp} arises from changes to the enthalpy caused by
+            species transferring in and out of the system as the equilibrium
+            state changes. This results in additional contributions to the
+            apparent heat capacity above the partial molar isobaric heat
+            capacity. For example, when a single-component fluid is at its
+            boiling point, the apparent heat capacity of the overall system is
+            infinite as $\partial N_i/\partial T$ is infinite due to the
+            discontinuous change from liquid to vapour causing the instananeous
+            transfer of molecules from one phase to another.
+        </p>
+        <p>
+            To complement the "equilibrium" thermodynamic $C_p$ above, it is
+            convenient to define "frozen" thermodynamic derivatives where there
+            are no molar fluxes, i.e., the "frozen" isobaric heat capacity,
+
+            \begin{align}\label{eq:frozenCp}
+            C_{p,\left\{N_j\right\}^{N_c}} = \sum_i^{N_C}N_i\,\bar{c}_{p,i}
+            \end{align}
+
+            The "frozen" properties are required while calculating the gradient
+            of thermodynamic potentials during minimisation, and arise as all
+            molar quantities are held constant while these derivatives are
+            taken.
+        </p>
+        <p>
+            The $C_p$ is just one material property; however, there are many
+            other thermodynamic derivatives which may be
+            calculated. Fortunately,
+            the <a href="https://en.wikipedia.org/wiki/Bridgman%27s_thermodynamic_equations">Bridgman
+                tables</a> is a convenient method to express any material property
+            as a function of just three key material derivatives. The heat
+            capacity is one and the other two are the isothermal ($\beta_T$) and
+            isobaric ($\alpha$) expansivities,
+
+            \begin{align*}
+            \alpha\,V=\left(\frac{\partial V}{\partial T}\right)_p &= \sum_i\left[\bar{v}_i\left(\frac{\partial
+            N_i}{\partial T}\right)_{p,\left\{N_{j\neq i}\right\}} + N_i\,\bar{\alpha}_i\,\bar{v}_i\right]
+            \\
+            \beta_T\,V=-\left(\frac{\partial V}{\partial p}\right)_T &= \sum_i\left[-\bar{v}_i\left(\frac{\partial
+            N_i}{\partial p}\right)_{T,\left\{N_{j\neq i}\right\}} + N_i\,\bar{\beta}_{T,i}\,\bar{v}_i\right]
+            \end{align*}
+
+            where $\bar{\alpha}_i\,\bar{v}_i= \left(\partial
+            \bar{v}_{i}/\partial T\right)_{p,\left\{N_j\right\}}$ and
+            $\bar{\beta}_{T,i}\,\bar{v}_i=-\left(\partial v_i/\partial
+            p\right)_{T,\left\{N_j\right\}}$. Again, "frozen" material
+            derivatives are available,
+
+            \begin{align}\label{eq:frozenAlphaBeta}
+            \left(\alpha\,V\right)_{\left\{N_i\right\}}&= \sum_i^{N_C}N_i\,\bar{\alpha}_i\,\bar{v}_i &
+            \left(\beta_T\,V\right)_{\left\{N_i\right\}}&= \sum_i^{N_C}N_i\,\bar{\beta}_i\,\bar{v}_i
+            \end{align}
+
+            The terms $\left(\partial N_i/\partial T\right)_{p,\left\{N_{j\neq
+            i}\right\}}$ and $\left(\partial N_i/\partial
+            p\right)_{T,\left\{N_{j\neq i}\right\}}$ which appear in the
+            material properties must be determined from the solution to the
+            thermodynamic minimisation problem. They quantify how
+            the <em>equilibrium</em> molar amounts change for a variation in
+            temperature and pressure and thus must account for the constraints
+            placed on the equilibrium state and the movement of the minimia.
+        </p>
+        <p>
+            The Bridgman table approach decomposes every thermodynamic
+            derivative into a look-up table for the numerator and denominator
+            expressed in terms of the three material derivatives, $C_p$,
+            $\alpha$, and $\beta_T$. For example, consider the following
+            "unnatural" derivative,
+
+            \begin{align}
+            \left(\frac{\partial G}{\partial V}\right)_{T} = \frac{\left(\partial G\right)_{T}}{\left(\partial
+            V\right)_{T}} = \frac{-V}{\beta_T\,V} = -\beta_T^{-1}
+            \end{align}
+
+            Thus, to generate any derivative required for minimisation, only the
+            three "material" derivatives and three partial molar properties are
+            required.
+        </p>
+        <div class="card">
+            <div class="card-header">Bridgman look-up tables</div>
+            <div class="card-body">
+                \begin{align*}(\partial T)_p=-(\partial p)_T=1\end{align*}
+                \begin{align*}(\partial V)_p=-(\partial p)_V=\left(\frac{\partial V}{\partial T}\right)_p\end{align*}
+                \begin{align*}(\partial S)_p=-(\partial p)_S=\frac{C_p}{T}\end{align*}
+                \begin{align*}(\partial U)_p=-(\partial p)_U=C_p-p\left(\frac{\partial V}{\partial
+                T}\right)_p\end{align*}
+                \begin{align*}(\partial H)_p=-(\partial p)_H=C_p\end{align*}
+                \begin{align*}(\partial G)_p=-(\partial p)_G=-S\end{align*}
+                \begin{align*}(\partial A)_p=-(\partial p)_A=-S-p\left(\frac{\partial V}{\partial
+                T}\right)_p\end{align*}
+                \begin{align*}(\partial V)_T=-(\partial T)_V=-\left(\frac{\partial V}{\partial p}\right)_T\end{align*}
+                \begin{align*}(\partial S)_T=-(\partial T)_S=\left(\frac{\partial V}{\partial T}\right)_p\end{align*}
+                \begin{align*}(\partial U)_T=-(\partial T)_U=T\left(\frac{\partial V}{\partial
+                T}\right)_p+p\left(\frac{\partial V}{\partial p}\right)_T\end{align*}
+                \begin{align*}(\partial H)_T=-(\partial T)_H=-V+T\left(\frac{\partial V}{\partial
+                T}\right)_p\end{align*}
+                \begin{align*}(\partial G)_T=-(\partial T)_G=-V\end{align*}
+                \begin{align*}(\partial A)_T=-(\partial T)_A=p\left(\frac{\partial V}{\partial p}\right)_T\end{align*}
+                \begin{align*}(\partial S)_V=-(\partial V)_S=\frac{C_p}{T}\left(\frac{\partial V}{\partial
+                p}\right)_T+\left(\frac{\partial V}{\partial T}\right)_p^2\end{align*}
+                \begin{align*}(\partial U)_V=-(\partial V)_U=C_p\left(\frac{\partial V}{\partial
+                p}\right)_T+T\left(\frac{\partial V}{\partial T}\right)_p^2\end{align*}
+                \begin{align*}(\partial H)_V=-(\partial V)_H=C_p\left(\frac{\partial V}{\partial
+                p}\right)_T+T\left(\frac{\partial V}{\partial T}\right)_p^2-V\left(\frac{\partial V}{\partial
+                T}\right)_p\end{align*}
+                \begin{align*}(\partial G)_V=-(\partial V)_G=-V\left(\frac{\partial V}{\partial
+                T}\right)_p-S\left(\frac{\partial V}{\partial p}\right)_T\end{align*}
+                \begin{align*}(\partial A)_V=-(\partial V)_A=-S\left(\frac{\partial V}{\partial p}\right)_T\end{align*}
+                \begin{align*}(\partial U)_S=-(\partial S)_U=\frac{p\,C_p}{T}\left(\frac{\partial V}{\partial
+                p}\right)_T+p\left(\frac{\partial V}{\partial T}\right)_p^2\end{align*}
+                \begin{align*}(\partial H)_S=-(\partial S)_H=-\frac{V\,C_p}{T}\end{align*}
+                \begin{align*}(\partial G)_S=-(\partial S)_G=-\frac{V\,C_p}{T}+S\left(\frac{\partial V}{\partial
+                T}\right)_p\end{align*}
+                \begin{align*}(\partial A)_S=-(\partial S)_A=\frac{pC_p}{T}\left(\frac{\partial V}{\partial
+                p}\right)_T+p\left(\frac{\partial V}{\partial T}\right)_p^2+S\left(\frac{\partial V}{\partial
+                T}\right)_p\end{align*}
+                \begin{align*}(\partial H)_U=-(\partial U)_H=-VC_p+pV\left(\frac{\partial V}{\partial
+                T}\right)_p-pC_p\left(\frac{\partial V}{\partial p}\right)_T-pT\left(\frac{\partial V}{\partial
+                T}\right)_p^2\end{align*}
+                \begin{align*}(\partial G)_U=-(\partial U)_G=-VC_p+pV\left(\frac{\partial V}{\partial
+                T}\right)_p+ST\left(\frac{\partial V}{\partial T}\right)_p+Sp\left(\frac{\partial V}{\partial
+                p}\right)_T\end{align*}
+                \begin{align*}(\partial A)_U=-(\partial U)_A=p(C_p+S)\left(\frac{\partial V}{\partial
+                p}\right)_T+pT\left(\frac{\partial V}{\partial T}\right)_p^2+ST\left(\frac{\partial V}{\partial
+                T}\right)_p\end{align*}
+                \begin{align*}(\partial G)_H=-(\partial H)_G=-V(C_p+S)+TS\left(\frac{\partial V}{\partial
+                T}\right)_p\end{align*}
+                \begin{align*}(\partial A)_H=-(\partial H)_A=-\left[S+p\left(\frac{\partial V}{\partial
+                T}\right)_p\right]\left[V-T\left(\frac{\partial V}{\partial T}\right)_p\right]+pC_p\left(\frac{\partial
+                V}{\partial p}\right)_T\end{align*}
+                \begin{align*}(\partial A)_G=-(\partial G)_A=-S\left[V+p\left(\frac{\partial V}{\partial
+                p}\right)_T\right]-pV\left(\frac{\partial V}{\partial T}\right)_p\end{align*}
+            </div>
+        </div>
+        <h3 id="tripleproductrule">Product rules</h3>
+        <p>
+            This section is almost directly copied
+            from <a href="http://math.stackexchange.com/questions/135613/is-there-a-quadruple-product-rule">this
+                math.StackExchange.com post</a>.
+        </p>
+        <p>
+            Consider any expression for a thermodynamic property, $M$, written
+            in terms of the state variables, $M=M\left(\vec{X}\right)$. It is
+            straightforward to transform this function into an implicit function
+            $F=F\left(M,\,\vec{X}\right)=M(\vec{X}) - M=0$ which helps to
+            illustrate that $M$ can be treated as a variable on an equal basis
+            as $\vec{X}$. To allow a uniform representation, the arguments of
+            $F$ are relabeled such that $F(x_1,x_2,\ldots,x_N)=0$. As the
+            function $F$ remains at zero, holding all variables except two
+            constant taking the total derivative and setting ${\rm d}F=0$ yields
+            the following identity,
+
+            \begin{align*}
+            \left(\frac{\partial x_i}{\partial x_j}\right)_{x_k\forall k\neq i,j} &= - \frac{\left(\partial F/\partial
+            x_j\right)_{x_k\forall k\neq j}}{\left(\partial F/\partial x_i\right)_{x_k\forall k\neq i}} & \text{for
+            $i\neq j$}.
+            \end{align*}
+
+            This rule can be combined repeatedly and the terms on the RHS
+            eliminated provided the variables loop back on themselves. For
+            example,
+
+            \begin{align*}
+            \left(\frac{\partial x_1}{\partial x_2}\right)_{x_k\forall k\neq 1,2}\left(\frac{\partial x_2}{\partial
+            x_3}\right)_{x_k\forall k\neq 2,3}\ldots\left(\frac{\partial x_n}{\partial x_1}\right)_{x_k\forall k\neq
+            n,1} &= (-1)^n \cancelto{1}{\frac{\partial F/\partial x_2}{\partial F/\partial x_1}\frac{\partial F/\partial
+            x_3}{\partial F/\partial x_2}\ldots\frac{\partial F/\partial x_1}{\partial F/\partial x_n}} & \text{for $n >
+            1$}.
+            \end{align*}
+
+            where the variables held constant were dropped for
+            brevity on the right hand side. The first value $n=2$ yields the well known
+            expression,
+
+            \begin{align}
+            \left(\frac{\partial x_1}{\partial x_2}\right)_{x_k\forall k\neq 1,2} \left(\frac{\partial x_2}{\partial
+            x_1}\right)_{x_k\forall k\neq 1,2} &= 1,
+            \end{align}
+
+            or, more familiarly (and without the explicit variables held constant),
+
+            \begin{align}
+            \frac{\partial x_1}{\partial x_2} &= \left(\frac{\partial x_2}{\partial x_1}\right)^{-1}.
+            \end{align}
+
+            Finally, $n=3$ yields the triple product rule,
+
+            \begin{align}
+            \left(\frac{\partial x_1}{\partial x_2}\right)_{x_3}\left(\frac{\partial x_2}{\partial
+            x_3}\right)_{x_1}\left(\frac{\partial x_3}{\partial x_1}\right)_{x_2} &= -1
+            \end{align}
+
+            where it is implied that all other variables other than $x_1$,
+            $x_2$, and $x_3$ are held constant. This rule has wide application
+            but is particularly attractive when derivatives hold an "awkward"
+            thermodynamic property constant. For example, consider the following
+            case
+
+            \begin{align}
+            \left(\frac{\partial p}{\partial T}\right)_G = -\left(\frac{\partial G}{\partial
+            p}\right)_T^{-1}\left(\frac{\partial G}{\partial T}\right)_p = \frac{S}{V}
+            \end{align}
+
+            The LHS is difficult to directly calculate in the state variables
+            chosen here; however, the RHS arising from the triple product rule
+            is in terms of natural derivatives of $G$ which are straightforward
+            to calculate. The triple product rule is used extensively in the
+            following sections to express complex expressions in terms of
+            natural derivatives.
+        </p>
+        <h3 id="partial-molar-to-volar">Relation between $\bar{x}_i$ and $\breve{x}_i$</h3>
+        <p>
+            Consider a property, $M$, which is a function for four variables
+            $x_1,x_2,x_3,x_4$. The total derivative is,
+
+            \begin{align*}
+            {\rm d}M = \sum_i \left(\frac{\partial M}{\partial x_i}\right)_{x_{i\neq j}} {\rm d}x_i
+            \end{align*}
+
+            Holding two variables constant and taking a derivative wrt a third yields,
+
+            \begin{align*}
+            \left(\frac{\partial M}{\partial x_1}\right)_{x_2,x_3} = \left(\frac{\partial M}{\partial
+            x_1}\right)_{x_2,x_3,x_4} + \left(\frac{\partial M}{\partial x_4}\right)_{x_1,x_2,x_3} \left(\frac{\partial
+            x_4}{\partial x_1}\right)_{x_2,x_3}
+            \end{align*}
+
+            Three relablings of this expression can be used to interrelate two
+            derivatives which only differ in one variable which is held constant.
+
+            \begin{align*}
+            \left(\frac{\partial M}{\partial x_1}\right)_{x_2,x_3}
+            = \left(\frac{\partial M}{\partial x_1}\right)_{x_2,x_4}
+            + \left(\frac{\partial M}{\partial x_4}\right)_{x_1,x_2}
+            \left(\frac{\partial x_4}{\partial x_1}\right)_{x_2,x_3}
+            - \left(\frac{\partial M}{\partial x_3}\right)_{x_2,x_3,x_4}
+            \cancelto{0}{\left(\left(\frac{\partial x_3}{\partial x_4}\right)_{x_1,x_2}\left(\frac{\partial
+            x_4}{\partial x_1}\right)_{x_2,x_3}+\left(\frac{\partial x_3}{\partial x_1}\right)_{x_2,x_4}\right)}
+            \end{align*}
+
+            where the final term in parenthesis is cancelled to zero using the
+            triple product rule.
+
+            \begin{align}
+            \left(\frac{\partial M}{\partial x_1}\right)_{x_2,x_3}
+            = \left(\frac{\partial M}{\partial x_1}\right)_{x_2,x_4}
+            + \left(\frac{\partial M}{\partial x_4}\right)_{x_1,x_2}
+            \left(\frac{\partial x_4}{\partial x_1}\right)_{x_2,x_3}
+            \end{align}
+
+            This equation is particularly useful for changing between partial
+            quantities while pressure or volume is held constant. For example,
+
+            \begin{align}
+            \left(\frac{\partial M}{\partial N_i}\right)_{T,p,\left\{N_{j\neq i}\right\}}
+            = \left(\frac{\partial M}{\partial N_i}\right)_{T,V,\left\{N_{j\neq i}\right\}}
+            + \left(\frac{\partial M}{\partial V}\right)_{T,\left\{N_{j}\right\}}
+            \left(\frac{\partial V}{\partial N_i}\right)_{T,p,\left\{N_{j\neq i}\right\}}
+            \end{align}
+
+            or, in the notation used so far,
+
+            \begin{align}\label{eq:molartovolarproperty}
+            \bar{m}_i
+            = \breve{m}_i
+            + \bar{v}_i \left(\frac{\partial M}{\partial V}\right)_{T,\left\{N_{j}\right\}}.
+            \end{align}
+
+            This is a more useful form of
+            Eq.\eqref{eq:partialVolarProperty}. The partial molar volume is
+            inconvenient to derive directly when volume is an explicit variable;
+            however, it may be expressed more conveniently using the triple
+            product rule,
+
+            \begin{align}\label{eq:TVpartialmolarvolume}
+            \bar{v}_i = - \left(\frac{\partial p}{\partial n_i}\right)_{T,V,\left\{N_{j\neq i}\right\}}
+            \left(\frac{\partial p}{\partial V}\right)_{T,\left\{N_{j}\right\}}^{-1}.
+            \end{align}
+
+            This allows us to obtain partial molar properties conveniently when
+            working with volume as a state variable.
+        </p>
+        <h2 id="volume-explicit-models">Gibbs Models ($p$ as a variable)</h2>
+        <p>
+            In this section, the calculation of the required properties for
+            minimisation with phases specified by the following set of variables
+            is considered,
+
+            \begin{align*}
+            \vec{X}_\alpha &= \left\{T_\alpha,\,p_\alpha,\,\left\{N_{i}\right\}^{N_{C,\alpha}}\right\} .
+            \end{align*}
+
+            In this particular variable set, the required constraint derivatives
+            to implement the derivative of the Lagrangian are as follows,
+
+            \begin{align}
+            \left(\frac{\partial V_\alpha}{\partial T}\right)_{p,\left\{N_{i}\right\}} &=
+            \left(\alpha\,V\right)_{\left\{N_{i}\right\}},
+            \\
+            \left(\frac{\partial V_\alpha}{\partial p}\right)_{T,\left\{N_{i}\right\}} &=
+            -\left(\beta_T\,V\right)_{\left\{N_{i}\right\}},
+            \\
+            \left(\frac{\partial V_\alpha}{\partial N_i}\right)_{T,p,\left\{N_{j\neq i}\right\}} &= \bar{v}_i
+            \end{align}
+
+            The thermodynamic potential derivatives required to specify the
+            derivatives of the Lagrangian (Eq.\eqref{eq:Fderiv}) as generated
+            from Eqs.\eqref{eq:GradEqsStart}-\eqref{eq:GradEqsEnd} are
+
+            \begin{align}
+            \left(\frac{\partial f}{\partial T}\right)_{p,\left\{N_i\right\}},\,
+            \left(\frac{\partial f}{\partial p}\right)_{T,\left\{N_i\right\}},\,
+            \left(\frac{\partial f}{\partial N_i}\right)_{T,p,\left\{N_{i\neq j}\right\}},
+            \end{align}
+
+            where $f=\left\{H,G,-S,U,A\right\}$. These derivatives are easily
+            expressed using the <a href="#BridgmanTables">Bridgman tables</a> in
+            terms of the three standard material derivatives and the results are
+            given in the table below.
+        </p>
+        <table class="table table-striped table-hover mx-auto col-md-6">
+            <thead>
+                <tr>
+                    <th>$Y_1$</th>
+                    <th>$Y_2$</th>
+                    <th>$f$</th>
+                    <th>$\left(\frac{\partial f}{\partial N_i}\right)_{T,p,\left\{N_{j\neq i}\right\}}$</th>
+                    <th>$\left(\frac{\partial f}{\partial T}\right)_{p,\left\{N_j\right\}}$</th>
+                    <th>$\left(\frac{\partial f}{\partial p}\right)_{T,\left\{N_j\right\}}$</th>
+                </tr>
+            </thead>
+            <tr>
+                <td>$p$</td>
+                <td>$T$</td>
+                <td>
+                    $G$ </td>
+                <td>$\mu_i$ </td>
+                <td> $-S$</td>
+                <td> $V$ </td>
+            </tr>
+            <tr>
+                <td>$V$ </td>
+                <td>$T$</td>
+                <td>
+                    $A$ </td>
+                <td>$\bar{a}_i$</td>
+                <td> $-(S+p\,\alpha\,V)$ </td>
+                <td> $p\left(\beta_{T}\,V\right)_{\left\{N_i\right\}}$ </td>
+            </tr>
+            <tr>
+                <td>$p$</td>
+                <td>$S$ </td>
+                <td>
+                    $H$ </td>
+                <td>$\bar{h}_i$</td>
+                <td>$C_{p,\left\{N_j\right\}}$ </td>
+                <td> $V(1-T\,\alpha)$ </td>
+            </tr>
+            <tr>
+                <td>$p$<br />$V$</td>
+                <td>$H$<br />$U$</td>
+                <td>
+                    $-S$ </td>
+                <td>$-\bar{s}_i$</td>
+                <td>$-T^{-1}\,C_{p,\left\{N_j\right\}}$ </td>
+                <td> $\left(\alpha\,V\right)_{\left\{N_i\right\}}$ </td>
+            </tr>
+            <tr>
+                <td>$V$ </td>
+                <td>$S$ </td>
+                <td>
+                    $U$ </td>
+                <td>$\bar{u}_i$</td>
+                <td>$C_{p,\left\{N_j\right\}}-p\left(\alpha\,V\right)_{\left\{N_i\right\}}$</td>
+                <td>
+                    $p\left(\beta_{T}\,V\right)_{\left\{N_i\right\}}-T\,\left(\alpha\,V\right)_{\left\{N_i\right\}}$
+                </td>
+            </tr>
+        </table>
+        <p>
+            In summary, a model using this variable set must provide
+            implementations of $\mu_i$, $\bar{v}_i$, $\bar{s}_i$,
+            $\bar{\alpha}_i$, $\bar{\beta}_{T,i}$, and $\bar{c}_{p,i}$. These
+            are all straightforward to obtain by performing derivatives of a
+            Gibbs free energy function in its natural variables or integration
+            and differentiation if a mechanical equation of state,
+            $V\left(T,p,\left\{N_i\right\}\right)$, is available.
+        </p>
+        <p>
+            All other partial molar properties are obtained using
+            Eqs.\eqref{eq:partialmolarrelationstart}-\eqref{eq:partialmolarrelationend}
+            expressed in the following form.
+
+            \begin{align}
+            \bar{a}_i&= \mu_i - p\,\bar{v}_i\\
+            \bar{h}_i&= \mu_i + T\,\bar{s}_i\\
+            \bar{u}_i&= \mu_i + T\,\bar{s}_i - p\,\bar{v}_i
+            \end{align}
+
+            Most other relevant thermodynamic properties are calculated using
+            the <a href="#BridgmanTables">Bridgman tables</a>.
+        </p>
+        <h3>Ideal gas model</h3>
+        <p>
+            The ideal gas model is not only a good approximation for gases at
+            low pressures, but it is also a key reference "state" for most
+            complex equations. A thermodynamic path can be constructed to the
+            ideal gas state at low pressures for most models, thus in this case
+            a "ideal-gas" contribution can be factored out from these models.
+        </p>
+        <p>
+            The ideal gas chemical potential is defined as follows,
+
+            \begin{align}\label{eq:idealgasmuTP}
+            \mu^{(ig)}_{i}(T,\,p) &= \mu_{i}^{(ig)}(T) + R\,T\ln \left(\frac{p}{p_0}\right) + R\,T\ln
+            \left(\frac{N_{i}}{N_\alpha}\right).
+            \end{align}
+
+            where $p_0$ is the reference pressure at which the
+            temperature-dependent term, $\mu^{(ig)}_{i}(T)$, is measured and
+            $N_\alpha$ is the total moles of the phase $\alpha$.
+        </p>
+        <p>
+            Using the chemical potential as a generating function, the minimial
+            set of partial molar properties is derived below.
+
+            \begin{align*}
+            \bar{v}_{i}^{(ig)} &= R\,T/p
+            &
+            \bar{s}_{i}^{(ig)} &= -\frac{\partial \mu_{i}^{(ig)}(T)}{\partial T} - R \ln\left(\frac{p}{p_0}\right) - R
+            \ln\left(\frac{N_{i}}{N_\alpha}\right)
+            \\
+            \bar{c}_{p,i}^{(ig)} &= -T\frac{\partial^2 \mu^{(ig)}_{i}(T)}{\partial T^2}
+            &
+            \alpha^{(ig)} &= T^{-1}
+            \\
+            \beta_{T}^{(ig)} &= p^{-1}
+            &
+            &
+            \end{align*}
+
+            where the partial molar heat capacity has been implicitly defined as
+            $C_{p,\left\{N_i\right\}}^{(ig)} = \sum_i N_i\,\bar{c}_{p,i}^{(ig)}$.
+        </p>
+        <p>
+            The model is not completely specified until the pure function of
+            temperature, $\mu_{i}^{(ig)}(T)=h_{i}^{(ig)}(T) -
+            T\,s_{i}^{(ig)}(T)$, is specified, and this is discussed in the
+            following section.
+        </p>
+        <div class="card">
+            <div class="card-header">Dalton's law and mixing entropy</div>
+            <div class="card-body">
+                <p>
+                    This is not a proof of how mixing entropy arises (which is
+                    discussed below), but a demonstration that mixing entropy is
+                    consistent with Dalton's law holding true. Consider a single
+                    component ideal gas, we have,
+
+                    \begin{align*}
+                    g_{i,pure} &= g_i^0(T) + R\,T\ln \left(\frac{p}{p_0}\right)
+                    \end{align*}
+
+                    If Dalton's law is true, the pressure of a single species is
+                    reduced when mixed as it only exerts a partial pressure,
+                    ($p_i=x_i\,p$). Assuming the total pressure and temperature
+                    remains constant during mixing,
+
+                    \begin{align*}
+                    g_{i,mixed} &= g^0_i(T) + R\,T\ln \left(\frac{p_i}{p_0}\right) = g^0_i(T) + R\,T\ln
+                    \left(\frac{p}{p_0}\right) + R\,T\ln x_i\\
+                    g_{i,mixed} - g_{i,pure} &= R\,T\ln x_i.
+                    \end{align*}
+
+                    As $x\le1$, $g_{mixed} - g_{pure}\le0$, which is
+                    consistent that two ideal gases will be mixed at equilibrium
+                    under constant $T,p$. Thus, Dalton's law is consistent with mixing entropy
+                </p>
+            </div>
+            <h3>Mixing entropy from lattice arguments</h3>
+            <div>
+                <p>
+                    First, it is noted that entropy is extensive. The entropy of
+                    two separate systems is the sum of each,
+
+                    \begin{align*}
+                    S = S_1 + S_2
+                    \end{align*}
+
+                    Fundamentally, entropy is a measure of the number of states of
+                    a system; however, the number of states
+                    has <em>multiplicative</em> scaling. For example, consider a
+                    collection of light switches. A single light switch has two
+                    states but a collection of $N$ light switches has $2^N$
+                    possible states. The number of states is clearly
+                    multiplicative and yet entropy is additive. The entropy must
+                    therefore be the logarithm of the number of states as $\ln 2^N
+                    = N \ln 2$. This line of arguing leads to what is known as
+                    Boltzmann's entropy,
+
+                    \begin{align*}
+                    S = R \ln W
+                    \end{align*}
+
+                    where $W$ is the number of states and $R$ makes the connection
+                    to the thermal scale.
+                </p>
+                <p>
+                    Now consider a binary mixture where each location of the
+                    system is on a lattice. Each "site" of the lattice may be
+                    occupied by one of two end-members/molecules, $N_1$ or
+                    $N_2$. The total number of available sites is $N=N_1+N_2$ (the
+                    lattice is full). As each end-member/molecule is
+                    indistinguishable from other molecules of the same type, the
+                    number of ways we can arrange these molecules are,
+
+                    \begin{align*}
+                    W = N! / (N_1!\, N_2!)
+                    \end{align*}
+
+                    The entropy is then,
+
+                    \begin{align*}
+                    S &= R \ln \left(\frac{N!}{N_1!\,N_2!}\right)
+                    \\
+                    &= R \left(\ln \left(N!\right) - \ln\left(N_1!\right) - \ln\left(N_2!\right)\right)
+                    \end{align*}
+
+                    Using Stirling's approximation
+                    $\lim_{n\to\infty}\ln(n!)=n\,\ln(n)-n$.
+
+                    \begin{align*}
+                    S &= R \left(N\,\ln \left(N\right) - N_1\,\ln\left(N_1\right) - N_2\ln\left(N_2\right)\right)
+                    \\
+                    &= R\,N \left(\ln \left(N\right) - \frac{N_1}{N}\,\ln\left(N_1\right) -
+                    \frac{N_2}{N}\ln\left(N_2\right)\right)
+                    \\
+                    &= R\,N \left(\ln \left(N\right) - \frac{N_1}{N}\,\ln\left(N_1\right) -
+                    \frac{N_2}{N}\ln\left(N_2\right)\right)
+                    \\
+                    &= -R\,N \left(\frac{N_1}{N}\,\ln\left(\frac{N_1}{N}\right) +
+                    \frac{N_2}{N}\ln\left(\frac{N_2}{N}\right)\right)
+                    \end{align*}
+
+                    For a gas, consider that the number of sites is actually the
+                    number of molecules in the system and all we are doing is
+                    allowing the gases to mix (each species may substitute for
+                    another species provided the overall molar balance is
+                    maintained), then it is clear that:
+
+                    \begin{align*}
+                    S = -R\,N \left(x_1\ln x_1 + x_2\ln x_2\right)
+                    \end{align*}
+
+                    In comparison with the ideal gas properties, this is the
+                    entropy of mixing as derived from Dalton's law!
+                </p>
+            </div>
+        </div>
+        <h3>Ideal-gas isobaric contribution $\mu_{i}^{(ig)}(T)$</h3>
+        <p>
+            The term $\mu_{i}^{(ig)}(T)$ is a function of temperature which is
+            directly related to the thermodynamic properties of a single
+            isolated molecule (molecules of ideal gases do not interact). There
+            are many theoretical approaches to expressing these terms for
+            solids, simple models (i.e., rotors), and quantum mechanics can even
+            directly calculate values for real molecules. However these results
+            are obtained, this term is typically parameterised using polynomial
+            equations.
+        </p>
+        <p>
+            The most common parameterisation is to use a polynomial for the heat
+            capacity. This is common to the NIST, NASA CEA, ChemKin, and many
+            other thermodynamic databases.
+
+            \begin{align}\label{eq:cppoly}
+            \bar{c}_{p,i}^{(ig)}(T) &= \sum_{k} C_k\,T^k
+            \end{align}
+
+            A heat capacity polynomial can be related to the enthalpy and
+            entropy through two additional constants, To demonstrate how this is
+            correct, consider a closed system,
+
+            \begin{align*}
+            {\rm d}H = T\,{\rm d} S + V\,{\rm d}p.
+            \end{align*}
+
+            At constant pressure the following expression holds,
+            \begin{align*}
+            \left(\frac{\partial S}{\partial T}\right)_{p} = \frac{1}{T}\left(\frac{\partial H}{\partial
+            T}\right)_p=\frac{C_p}{T}.
+            \end{align*}
+
+            Thus,
+
+            \begin{align*}
+            H^{(ig)}(T) - H^{(ig)}(T_{ref}) &= \int_{T_{ref}}^T C_p^{ig}(T)\,{\rm d}T & S^{(ig)}(T)-S^{(ig)}(T_{ref}) &=
+            \int_{T_{ref}}^T\frac{C_p^{(ig)}(T)}{T}{\rm d}T
+            \end{align*}
+
+            where $T_{ref}$ is a reference Performing this integration for the polynomial of Eq.\eqref{eq:cppoly},
+
+            \begin{align*}
+            \bar{h}_i^{(ig)}(T) &= \int \bar{c}_{p,i}^{(ig)}(T) {\rm d}T = C_{-1}\,\ln T + \sum_{k\neq-1}
+            \frac{C_k}{k+1}\,T^{k+1} + \bar{h}_i^0
+            \\
+            \bar{s}_i^{(ig)}(T) &= \int \frac{\bar{c}_{p,i}^{(ig)}(T)}{T} {\rm d}T = C_{0}\,\ln T + \sum_{k\neq 0}
+            \frac{C_k}{k}\,T^{k} + \bar{s}_i^0,
+            \end{align*}
+
+            where the two additional constants $\bar{h}_i^0$ and $\bar{s}_i^0$ must be
+            determined through construction of a thermodynamic path to a known
+            value of the entropy and enthalpy. This is usually through heats of
+            reaction, solution, and equilibria such as vapour pressure, linking
+            to the elements at standard conditions.
+        </p>
+        <p>
+            To allow this data to be expressed as a single function in
+            Simcem, it is expressed directly as $\mu_i^{(ig)}(T)$ using
+            the following transformation,
+
+            \begin{align}\label{eq:Mu_shomate_form}
+            \mu^{(ig)}_{i}(T) &= \tilde{C}_{lnT}\ln T + \tilde{C}_{TlnT}\,T\,\ln T + \sum_{k} \tilde{C}_k\,T^{k}
+            \end{align}
+
+            where,
+
+            \begin{align*}
+            \tilde{C}_k = \begin{cases}
+            C_{-1} & \text{for $k=\ln T$.}\\
+            -C_{0} & \text{for $k=T\ln T$.}\\
+            C_{-1}+h_i^0 & \text{for $k=0$.}\\
+            C_{0}-s_i^0 & \text{for $k=1$.}\\
+            -\frac{C_{k-1}}{(k-1)k} & \text{for all other polynomial $C_p$ terms.}
+            \end{cases}
+            \end{align*}
+        </p>
+        <p>
+            The most comprehensive (and most importantly, free!) source of ideal
+            gas heat capacities and constants is the NASA CEA database, but
+            additional constants are widely available. When collecting $c_p$
+            data, a distinction must be made between the calculated ideal gas
+            properties and the measured data. The measured data may include
+            additional contributions from the interactions of the molecules and
+            thus must be fitted with the full chemical potential model and not
+            just the ideal gas model.
+        </p>
+        <div class="card">
+            <div class="card-header">Derivation of transformation</div>
+            <div class="card-body">
+                <p>
+                    \begin{align*}
+                    \mu^{(ig)}_{i}(T) &= \bar{h}_i^{(ig)}(T) - T\,\bar{s}_i^{(ig)}(T)
+                    \\
+                    &= C_{-1}\,\ln T + \sum_{k\neq-1} \frac{C_k}{k+1}\,T^{k+1} + h_i^0 - C_{0}T\ln T - \sum_{k\neq 0}
+                    \frac{C_k}{k}\,T^{k+1} - T\,s_i^0
+                    \\
+                    &= \left(C_{-1}- C_{0}\,T\right)\ln T + h_i^0 - T\,s_i^0 + \sum_{k\neq-1} \frac{C_k}{k+1}\,T^{k+1} -
+                    \sum_{k\neq 0} \frac{C_k}{k}\,T^{k+1}
+                    \\
+                    &= \left(C_{-1}- C_{0}\,T\right)\ln T + h_i^0 +C_{-1} + T\left(C_0-\,s_i^0\right) +
+                    \sum_{k\neq\{-1,0\}} \frac{C_k}{k+1}\,T^{k+1} - \sum_{k\neq \{-1,0\}} \frac{C_k}{k}\,T^{k+1}
+                    \\
+                    &= \left(C_{-1}- C_{0}\,T\right)\ln T + h_i^0 +C_{-1} + T\left(C_0-\,s_i^0\right) +
+                    \sum_{k\neq\{-1,0\}} \left(\frac{1}{k+1}-\frac{1}{k}\right)C_k\,T^{k+1}
+                    \\
+                    &= \left(C_{-1}- C_{0}\,T\right)\ln T + h_i^0 +C_{-1} + T\left(C_0-\,s_i^0\right) -
+                    \sum_{k\neq\{-1,0\}} \frac{C_k}{k(k+1)}T^{k+1}
+                    \end{align*}
+
+                    Comparison with Eq.\eqref{eq:Mu_shomate_form} yields the
+                    definitions of the coefficients.
+
+                </p>
+            </div>
+        </div>
+        <h3>Incompressible phase</h3>
+        <p>
+            Another useful reference state is the incompressible phase. This
+            model is used to describe liquid and solid phases when an equation
+            of state describing all phases at once is unavailable. The
+            generating chemical potential is as follows,
+
+            \begin{align*}
+            \mu^{(ip)}_{i}(T,\,p) &= \mu^{(ip)}_{i}(T) + \bar{v}^0_{i}\left(p-p_0\right) + R\,T\ln
+            \left(\frac{N_{i}}{N_\alpha}\right)
+            \end{align*}
+
+            where $\mu^{(ip)}_{i}(T)$ is again a temperature-dependent term and
+            $\bar{v}^0_{i}$ is the (constant) partial molar volume of the
+            incompressible species $i$. Using the expression for the chemical
+            potential as a generating function all required properties are recovered,
+
+            \begin{align*}
+            \bar{v}_{i} &= \bar{v}^0_{i}
+            &
+            \bar{s}_{i} &= -\frac{\partial \mu^{(ip)}_{i}(T)}{\partial T} - R \ln\left(\frac{N_{i}}{N_{\alpha}}\right)
+            \\
+            \bar{c}_{p,i} &= -T\frac{\partial^2 \mu^{(ip)}_{i}(T)}{\partial T^2}
+            &
+            \bar{\alpha}_{i} &= 0
+            \\
+            \bar{\beta}_{T,i} &= 0
+            &
+            &
+            \end{align*}
+
+            As $\alpha$ and $\beta_T$ are zero, some thermodynamic properties
+            are not well specified but can be determined by other means. For
+            example, $\bar{c}_p^{(ip)}=\bar{c}_v^{(ip)}$. In Simcem, ideal solids still contain a
+            mixing entropy term which is included to allow ideal solid solutions
+            to be constructed and used as a base class for more complex models.
+        </p>
+        <h2 id="pressure-explicit-models">Helmholtz Models ($V$ as a variable)</h2>
+        <p>
+            In this section, the calculation of the required properties for
+            minimisation with phases specified by the following set of variables
+            is considered,
+
+            \begin{align*}
+            \vec{X}_\alpha &= \left\{T_\alpha,\,V_\alpha,\,\left\{N_{i}\right\}^{N_{C,\alpha}}\right\} .
+            \end{align*}
+
+            In this variable set, the required non-zero derivatives to compute
+            the constraint functions are as follows,
+
+            \begin{align}\label{eq:VMatDeriv1}
+            \left(\frac{\partial p_\alpha}{\partial T}\right)_{V,\left\{N_{i}\right\}}
+            = -\frac{\left(\alpha\,V\right)_{\left\{N_{i}\right\}}}{\left(\beta_T\,V\right)_{\left\{N_{i}\right\}}},
+            \\
+            \label{eq:VMatDeriv2}
+            \left(\frac{\partial p_\alpha}{\partial V}\right)_{T,\left\{N_{i}\right\}} =
+            -\left(\beta_T\,V\right)_{\left\{N_{i}\right\}}^{-1},
+            \\
+            \left(\frac{\partial p_\alpha}{\partial N_i}\right)_{T,V,\left\{N_{j\neq i}\right\}}
+            \end{align}
+
+            These derivatives are convenient to determine in this variable set
+            and also indirectly specify $\alpha$ and $\beta_T$ which are two of
+            the three required material derivatives to allow use of the Bridgman
+            tables. The third molar derivative is also convenient to determine
+            and provides a direct path to the molar volume as given in
+            Eq.\eqref{eq:TVpartialmolarvolume} and reproduced below,
+
+            \begin{align}
+            \bar{v}_i = - \left(\frac{\partial p}{\partial N_i}\right)_{T,V,\left\{N_{j\neq i}\right\}}
+            \left(\frac{\partial p}{\partial V}\right)_{T,\left\{N_{j}\right\}}^{-1}.
+            \end{align}
+
+            Thus, these three derivatives are required to be implemented by all
+            models and used to derive other properties.
+
+            The derivatives of the potentials are as follows
+
+            \begin{align}
+            \left(\frac{\partial f}{\partial T}\right)_{V,\left\{N_i\right\}},\,
+            \left(\frac{\partial f}{\partial V}\right)_{T,\left\{N_i\right\}},\,
+            \left(\frac{\partial f}{\partial N_i}\right)_{T,V,\left\{N_{i\neq j}\right\}},
+            \end{align}
+
+            where $f=\left\{H,G,-S,U,A\right\}$. The derivatives for each
+            potential are specified below in terms of the most convenient
+            properties/derivatives for this variable set.
+        </p>
+        <table class="table table-striped table-hover mx-auto col-md-6">
+            <thead>
+                <tr>
+                    <th>$Y_1$</th>
+                    <th>$Y_2$</th>
+                    <th>$f$</th>
+                    <th>$\left(\frac{\partial f}{\partial N_i}\right)_{T,V,\left\{N_{j\neq i}\right\}}$</th>
+                    <th>$\left(\frac{\partial f}{\partial T}\right)_{V,\left\{N_j\right\}}$</th>
+                    <th>$\left(\frac{\partial f}{\partial V}\right)_{T,\left\{N_j\right\}}$</th>
+                </tr>
+            </thead>
+            <tr>
+                <td>$p$</td>
+                <td>$T$</td>
+                <td> $G$ </td>
+                <td> $\breve{g}_i$ </td>
+                <td>$V\,\left(\frac{\partial p}{\partial T}\right)_{V,\left\{N_i \right\}} -S$</td>
+                <td>$V \left(\frac{\partial p}{\partial V}\right)_{T,\left\{N_i\right\}}$</td>
+            </tr>
+            <tr>
+                <td>$V$</td>
+                <td>$T$</td>
+                <td> $A$ </td>
+                <td> $\breve{a}_i$ </td>
+                <td>$-S$</td>
+                <td>$-p$</td>
+            </tr>
+            <tr>
+                <td>$p$</td>
+                <td>$S$</td>
+                <td> $H$ </td>
+                <td> $\breve{h}_i$ </td>
+                <td>$C_{V,\left\{N_i\right\}}+V\,\left(\frac{\partial p}{\partial T}\right)_{V, \left\{N_i\right\}}$
+                </td>
+                <td>$V\left(\frac{\partial p}{\partial V}\right)_{T,\left\{N_i\right\}}+T\left(\frac{\partial
+                    p}{\partial T}\right)_{V,\left\{N_i\right\}}$</td>
+            </tr>
+            <tr>
+                <td>$p$<br />$V$</td>
+                <td>$H$<br />$U$</td>
+                <td> $-S$ </td>
+                <td>$-\breve{s}_i$ </td>
+                <td>$-\frac{C_{V,\left\{N_i\right\}}}{T}$</td>
+                <td>$-\left(\frac{\partial p}{\partial T}\right)_{V,\left\{N_i\right\}}$</td>
+            </tr>
+            <tr>
+                <td>$V$</td>
+                <td>$S$</td>
+                <td> $U$ </td>
+                <td> $\breve{u}_i$ </td>
+                <td>$C_{V,\left\{N_i\right\}}$</td>
+                <td>$T\,\left(\frac{\partial p}{\partial T}\right)_{V,\left\{N_i\right\}} - p$</td>
+            </tr>
+        </table>
+        <p>
+            where $C_V = \left(\partial U/\partial T\right)_V$, and is
+            related to the isobaric heat capacity using the following
+            relationship,
+
+            \begin{align}\label{eq:CpCv}
+            C_{p,\left\{N_i\right\}} = C_{v,\left\{N_i\right\}} -T\,\left(\frac{\partial p}{\partial
+            T}\right)_{V\,\left\{N_i\right\}}^2 \left(\frac{\partial p}{\partial V}\right)_{T,\left\{N_i\right\}}^{-1}
+            \end{align}
+
+            In summary, models should provide equations to calculate $p$,
+            $\breve{a}_i$, $\breve{u}_i$, $C_{v,\left\{N_i\right\}}$,
+            $\left(\partial p/\partial V\right)_{T,\left\{N_i\right\}}$,
+            $\left(\partial p/\partial T\right)_{V,\left\{N_i\right\}}$,
+            $\left(\partial p/\partial N_i\right)_{T,V,\left\{N_{j\neq
+            i}\right\}}$.
+
+            These derivatives are used to compute the frozen $\alpha$ and
+            $\beta_T$ values using Eqs.\eqref{eq:VMatDeriv1} and
+            \eqref{eq:VMatDeriv1}. The third material derivative,
+            $C_{p,\left\{N_i\right\}}$, is then obtained from
+            Eq.\eqref{eq:CpCv}. The partial molar volume is calculated from
+            Eq.\eqref{eq:TVpartialmolarvolume}. The partial volar/molar
+            quantities are related by Eq.\eqref{eq:molartovolarproperty};
+            however, the partial volar Helmholtz free energy is equal to the
+            chemical potential, just like any molar derivative of a potential
+            when its natural variables are held constant (see
+            Eq.\eqref{eq:ChemPotDefinition}). Thus, the partial volar/molar
+            Gibbs and Helmholtz free energies are closely related,
+
+            \begin{align}
+            \mu_i &= \breve{a}_i
+            \\
+            \bar{a}_i &= \breve{a}_i - p\,\bar{v}_i
+            \\
+            \breve{g}_i &= \mu_i - \bar{v}_i\,V\,\left(\frac{\partial p}{\partial V}\right)_{T,\left\{N_j\right\}}
+            \end{align}
+
+            All other required partial thermodynamic potential properties are
+            derived using straightforward applications of
+            Eq.\eqref{eq:molartovolarproperty} and the partial molar relations
+            of
+            Eqs.\eqref{eq:partialmolarrelationstart}-\eqref{eq:partialmolarrelationend},
+            the results of which are below,
+
+            \begin{align}
+            \bar{u}_i &= \breve{u}_i +\bar{v}_i\left(T\left(\frac{\partial p}{\partial T}\right)_{V,\left\{N_i\right\}}
+            - p\right)
+            \\
+            \bar{s}_i &= \frac{\bar{u}_i - \bar{a}_i}{T}
+            \\
+            \breve{s}_i &= \bar{s}_i - \bar{v}_i \left(\frac{\partial p}{\partial T}\right)_{V\,\left\{N_j\right\}}
+            \\
+            \bar{h}_i &= \bar{u}_i + p\,\bar{v}_i
+            \\
+            \breve{h}_i &= \bar{h}_i - \bar{v}_i\left(V\left(\frac{\partial p}{\partial
+            V}\right)_{T,\left\{N_i\right\}}+T\left(\frac{\partial p}{\partial T}\right)_{V,\left\{N_i\right\}}\right)
+            \end{align}
+
+        </p>
+        <h3>Ideal gas model</h3>
+        <p>
+            As experimental ideal-gas data is usually presented in terms of
+            isobaric polynomials, the ideal gas functions here are based on the
+            previous form of the ideal gas model given in
+            Eq.\eqref{eq:idealgasmuTP}. Transforming the pressure variable to
+            phase volume yields the following definition of the chemical
+            potential and partial volar Helmholtz free energy,
+
+            \begin{align}
+            \breve{a}_i = \mu_i^{(ig)}(T,V_\alpha) &= \mu_{i}^{(ig)}(T) + R\,T\ln
+            \left(\frac{N_\alpha\,R\,T}{V_\alpha\,p_0}\right) + R\,T\ln \left(\frac{N_{i}}{N_\alpha}\right).
+            \end{align}
+
+            The pressure derivatives are obtained from the well known relation
+            $p=N\,R\,T/V$,
+
+            \begin{align}
+            \left(\partial p/\partial V\right)_{T,\left\{N_i\right\}} &= - N\,R\,T/V^2
+            \\
+            \left(\partial p/\partial T\right)_{V,\left\{N_i\right\}} &= N\,R/V
+            \\
+            \left(\partial p/\partial N_i\right)_{T,V,\left\{N_{j\neq i}\right\}} &= R\,T/V
+            \end{align}
+
+            Finally, the internal energy and heat capacity are as follows,
+
+            \begin{align}
+            C_{v,\left\{N_i\right\}}^{(ig)}&=-T\sum_i N_i\,\frac{\partial^2 \mu_i(T)}{\partial T^2} - N\,R
+            \\
+            \breve{u}_i^{(ig)} = \bar{u}_i^{(ig)} &= \mu_i^{(ig)}(T) - R\,T-T\frac{\partial \mu_i^{(ig)}(T)}{\partial T}
+            \end{align}
+        </p>
+        <h2>Other models</h2>
+        <h3>Excess phases</h3>
+        <p>
+            Assume a phase/model is infinite in quantity, therefore its
+            extensive state variables must be excluded from the system under
+            study. The infinite phase can exchange mass with the system under
+            study, thus it has a chemical potential. The change in the Gibb's
+            free energy of the (infinite) system can be defined in terms of the
+            changes in the species within it:
+
+            \begin{align}
+            \Delta G = \sum_i \mu_i\,\Delta N_i
+            \end{align}
+
+            where $\mu_i$ is the constant chemical potential. We note then that
+            the entropy change and volume change of this system due to variation
+            in the system temperature/pressure must be zero.
+        </p>
+        <h2>Automatic differentiation</h2>
+        <p>
+            The best introduction to automatic differentiation I found
+            are <a href="https://www.sintef.no/globalassets/project/evitameeting/2010/ad2010.pdf">here
+                from the 2010 Sintef winter school</a> and these notes are largely
+            based on those notes.
+        </p>
+        <p>
+            Our goal is to evaluate a function and its derivatives at once. By
+            considering how derivatives are propagated through
+            operators/functions we see that the $k$th derivative of a function
+            $f(g)$ can be expressed in terms of the first $k$ derivatives of
+            $g$. To prove this, consider the Taylor expansion of a general function $f$:
+
+            \begin{align*}
+            f(a+x) &= f(a) + \frac{1}{1!}\left(\frac{\partial f}{\partial x}\right)(a)(x-a)
+            + \frac{1}{2!}\left(\frac{\partial^2 f}{\partial x^2}\right)(a)(x-a)^2 + \ldots
+            \\
+            &= \sum_{k=0}^\infty \frac{1}{k!}\left(\frac{\partial^k f}{\partial x^k}\right)(a)(x-a)^k
+            \\
+            &= \sum_{k=0}^\infty f_k(a)(x-a)^k
+            \end{align*}
+
+            Each Taylor term $f_k$ corresponds to the $k$th derivative (divided
+            by $k!$). Thus if we can determine how the Taylor coefficients of
+            the result of an operation are related to the Taylor coefficients of
+            its arguments, we can propogate derivative information through the
+            operation.
+        </p>
+        <h3>Basic arithmetic</h3>
+        <p>
+            To demonstrate this we start from two basic definitions: one for the
+            Taylor coefficients of a constant, $c$:
+
+            \begin{align*}
+            (c)_k = \begin{cases}
+            c & \text{for $k=0$}\\
+            0 & \text{for $k>0$}
+            \end{cases},
+            \end{align*}
+
+            and another for the Taylor coefficients of a variable, $x$:
+
+            \begin{align*}
+            (x)_k = \begin{cases}
+            x & \text{for $k=0$}\\
+            1 & \text{for $k=1$}\\
+            0 & \text{for $k>1$}
+            \end{cases}.
+            \end{align*}
+
+            Our first operations are addition and subtraction, where it is easy
+            to see the Taylor series of the result is trivially calcluated from
+            the Taylor series of the arguments:
+
+            \begin{align*}
+            \left(f+g\right)_k &= f_k + g_k\\
+            \left(f-g\right)_k &= f_k - g_k
+            \end{align*}
+
+            For multiplication, consider Taylor expansions of both the result
+            and the two functions:
+
+            \begin{align*}
+            \sum_{k=0}^\infty \left(f\,g\right)_k (x-a)^k &= \sum_{l=0}^\infty f_l (x-a)^l \sum_{m=0}^\infty g_m (x-a)^m
+            \\
+            &= \sum_{l=0}^\infty\sum_{m=0}^\infty f_l\,g_m (x-a)^{l+m}
+            \end{align*}
+
+            We can then match terms in equal powers of $(x-a)$ on either side of
+            the equation to yield the final result:
+
+            \begin{align*}
+            \left(f\,g\right)_k = \sum_{i=0}^k f_{i} g_{k-i}
+            \end{align*}
+
+            Division is slightly more challenging, instead consider that $f =
+            (f\div g) g$, and insert the taylor expansions:
+
+            \begin{align*}
+            \sum_{k=0}^\infty f_k (x-a)^k &= \sum_{l=0}^\infty(f\div g)_l (x-a)^l \sum_{m=0}^\infty g_m (x-a)^m
+            \\
+            &= \sum_{l=0}^\infty \sum_{m=0}^\infty (f\div g)_l g_m (x-a)^{l+m}
+            \end{align*}
+
+            Again equating terms with equal powers exactly as with
+            multiplication:
+
+            \begin{align*}
+            f_k &= \sum_{l=0}^k(f\div g)_l g_{k-l}
+            \\
+            &= \sum_{l=0}^{k-1} (f\div g)_l g_{k-l} + (f\div g)_k g_0
+            \\
+            (f\div g)_k &= \frac{1}{g_0}\left(f_k - \sum_{l=0}^{k-1} (f\div g)_l g_{k-l}\right)
+            \end{align*}
+
+            Where we removed our target term from the sum in the second line, then
+            rearranged to make it the subject in the third line.
+        </p>
+        <h3>Special functions</h3>
+        <p>
+            Now we focus on special functions. To solve these, we need the
+            general derivative of a taylor series:
+
+            \begin{align*}
+            \frac{\partial f}{\partial x} = \sum_{k=1}^\infty k\,f_k (x-a)^{k-1}
+            \end{align*}
+
+            Considering $\ln$ first, we have the following differential
+            relationship:
+
+            \begin{align*}
+            \frac{\partial}{\partial x} \ln f &= \frac{\partial f}{\partial x} \frac{1}{f}
+            \\
+            f \frac{\partial}{\partial x} \ln f &= \frac{\partial f}{\partial x},
+            \end{align*}
+
+            where we have multiplied by $f$ to avoid polynomial division when
+            the Taylor series are inserted. Doing this now,
+
+            \begin{align*}
+            \sum_{i=0}^\infty f_i (x-a)^i \sum_{j=1}^\infty j\left(\ln f\right)_j (x-a)^{j-1} &= \sum_{k=1}^\infty k\,
+            f_k (x-a)^{k-1}
+            \end{align*}
+
+            Multiplying both sides by $(x-a)$, factoring common terms as with multiplication:
+
+            \begin{align*}
+            \sum_{i=0}^\infty f_i \sum_{j=1}^\infty j\left(\ln f\right)_j (x-a)^{i+j} &= \sum_{k=1}^\infty k\,f_k
+            (x-a)^k
+            \\
+            \sum_{i=1}^k f_{k-i}\,i\left(\ln f\right)_i &= k\,f_k & \text{for $k>0$}
+            \\
+            f_0\,k\,\left(\ln f\right)_k + \sum_{i=1}^{k-1} f_{k-i}\,i\left(\ln f\right)_i &= k\,f_k & \text{for $k>0$}
+            \\
+            \left(\ln f\right)_k &= \frac{1}{f_0}\left(f_k - \frac{1}{k}\sum_{i=1}^{k-1} i\,f_{k-i}\,\left(\ln
+            f\right)_i\right) & \text{for $k>0$}
+            \end{align*}
+
+            Where this expression only applies for $k>0$ as the first line has
+            no constant terms within it; however, we have the trivial identity
+            $(\ln f)_0 = \ln f_0$.
+
+            Sine and Cosine have to be calcluated at the same time (regardless
+            of which one is required). Starting from the general differentiation rules
+
+            \begin{align*}
+            \frac{\partial}{\partial x} \sin f &= \frac{\partial f}{\partial x} \cos f
+            \\
+            \frac{\partial}{\partial x} \cos f &= -\frac{\partial f}{\partial x} \sin f
+            \end{align*}
+
+            Inserting the Taylor expansions and grouping terms with identical
+            coefficients the result is found:
+
+            \begin{align*}
+            \left(\sin f\right)_k &= \frac{1}{k}\sum_{i=1}^k i\,f_i \left(\cos f\right)_{k-i} & \text{for $k>0$}
+            \\
+            \left(\cos f\right)_k &= -\frac{1}{k}\sum_{i=1}^k i\,f_i \left(\sin f\right)_{k-i} & \text{for $k>0$},
+            \end{align*}
+
+            again we have $\left(\sin f\right)_0 = \sin f_0$ and in general
+            $\left(f(g)\right)_0 = f(g_0)$.
+        </p>
+        <h3>Generalised Power law</h3>
+        <p>
+            Finally, we calculate the generalized power rule:
+
+            \begin{align*}
+            \frac{\partial}{\partial x} f^g &= f^g \left(\frac{\partial f}{\partial x} \frac{g}{f} + \frac{\partial
+            g}{\partial x} \ln f\right)
+            \\
+            f \frac{\partial}{\partial x} f^g &= f^g \frac{\partial f}{\partial x} g + f^g \frac{\partial g}{\partial x}
+            f\,\ln f
+            \end{align*}
+
+            Inserting Taylor expansions:
+
+            \begin{align*}
+            \sum_{i=0}^\infty \sum_{j=1}^\infty j\,f_i\left(f^g\right)_j \left(x-a\right)^{i+j-1} &= \sum_{i=0}^\infty
+            \left(f^g\right)_i\sum_{j=1}^\infty j\,f_j \sum_{k=0}^\infty g_k \left(x-a\right)^{i+j-1+k}
+            \\
+            &\qquad + \sum_{i=0}^\infty \left(f^g\right)_i\sum_{j=1}^\infty j\,g_j \sum_{k=0}^\infty f_k
+            \sum_{l=0}^\infty \left(\ln f\right)_l\left(x-a\right)^{i+j-1+k+l}
+            \end{align*}
+
+            Multiplying both sides by $\left(x-a\right)$ and grouping common indices/terms:
+
+            \begin{align*}
+            \sum_{i=0}^\infty \sum_{j=1}^\infty j\,f_i\left(f^g\right)_j \left(x-a\right)^{i+j}
+            &= \sum_{i=0}^\infty \sum_{j=1}^\infty \sum_{k=0}^\infty j\left(f^g\right)_i\left[f_j g_k
+            \left(x-a\right)^{i+j+k}
+            + g_j f_k \sum_{l=0}^\infty \left(\ln f\right)_l\left(x-a\right)^{i+j+k+l}\right]
+            \end{align*}
+
+            Selecting all terms with the $m$th power:
+
+            \begin{align*}
+            \sum_{j=1}^m j\,f_{m-j}\left(f^g\right)_j
+            &= \sum_{j=1}^{m} \sum_{i=0}^{m-j} j\left(f^g\right)_i\left[f_j g_{m-i-j}
+            + g_j \sum_{k=0}^{m-i-j} f_k \left(\ln f\right)_{m-i-j-k}\right]
+            \end{align*}
+
+            Factoring the $m$th term from the left-hand side:
+            \begin{align*}
+            \left(f^g\right)_m
+            &= \frac{1}{m\,f_0}\left(\sum_{j=1}^{m} \sum_{i=0}^{m-j} j\left(f^g\right)_i\left[f_j g_{m-i-j}
+            + g_j \sum_{k=0}^{m-i-j} f_k \left(\ln f\right)_{m-i-j-k}\right] - \sum_{j=1}^{m-1}
+            j\,f_{m-j}\left(f^g\right)_j\right)
+            \end{align*}
+
+            If the power is a constant, i.e., $g=a$, then the following
+            simplified expression is obtained:
+
+            \begin{align*}
+            \left(f^g\right)_m
+            &= \frac{1}{m\,f_0}\left(\sum_{j=1}^{m} j\left(f^g\right)_{m-j} f_j\,a
+            - \sum_{j=1}^{m-1} j\,f_{m-j}\left(f^g\right)_j\right)
+            \\
+            &= \frac{1}{m\,f_0}\sum_{j=1}^{m}\left(f^g\right)_{m-j} f_j\left(j\,a
+            - m+j\right)
+            \\
+            &= \frac{1}{f_0}\sum_{j=1}^{m}\left(\frac{(a + 1)j}{m}
+            - 1\right) f_j \left(f^g\right)_{m-j}.
+            \end{align*}
+        </p>
+    </div>
+</body>
+</html>
